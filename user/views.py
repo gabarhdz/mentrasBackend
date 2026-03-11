@@ -6,10 +6,13 @@ from .models import Forum
 # Create your views here.
 class AllForums(APIView):
     def get(self,request,*args,**kwargs):
-        forum = Forum.objects.all()
-        serializer = ForumSerializer(forum,context={'request':request})
+        forums = Forum.objects.all()
+        serializer = ForumSerializer(forums, many=True,context={'request':request})
         return Response(serializer.data,status=200)
     
     def post(self,request,*args,**kwargs):
         serializer = ForumSerializer(data = request.data, context={'request':request})
-        return Response(serializer.data,status=201)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
