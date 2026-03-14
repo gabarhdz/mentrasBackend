@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Forum, User
 
 class UserSerializer(serializers.ModelSerializer):
-    id=serializers.UUID(read_only=True)
+    id=serializers.UUIDField(read_only=True)
     password = serializers.CharField(write_only=True)
     is_mod = serializers.BooleanField(default=False)
     is_pyme_owner = serializers.BooleanField(default=False)
