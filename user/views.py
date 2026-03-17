@@ -31,6 +31,27 @@ class AllUsers(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+class UserDetail(APIView):
+    def patch(self, request, id, *args, **kwargs):
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(
+            user,
+            data=request.data,
+            partial=True,
+            context={'request': request},
+        )
+        if serializer.is_valid():
+            updated_user = serializer.save()
+            return Response(
+                UserSerializer(updated_user, context={'request': request}).data,
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class AllForums(APIView):
     def get(self,request,*args,**kwargs):
         forums = Forum.objects.all()
