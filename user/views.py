@@ -32,6 +32,14 @@ class AllUsers(APIView):
             )
 
 class UserDetail(APIView):
+
+    def get(self,request,id,*args,**kwargs):
+        try: 
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
+        serializer = UserSerializer(user,context={'request':request}) 
+        return Response(serializer.data,status=status.HTTP_200_OK)
     def patch(self, request, id, *args, **kwargs):
         try:
             user = User.objects.get(id=id)
