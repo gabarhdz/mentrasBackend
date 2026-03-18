@@ -59,6 +59,15 @@ class UserDetail(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self,request,id,*args,**kwargs):
+        id = request.user.id
+        user = User.objects.get(id=id)
+        if id == user.id:
+            Response({"Error":"You can not delete an user that is not you"},status=status.HTTP_403_FORBIDDEN)
+        user.delete()
+        Response({"Status":"User deleted succesfully"})
+
+
 
 class AllForums(APIView):
     def get(self,request,*args,**kwargs):
