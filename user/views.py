@@ -60,12 +60,25 @@ class UserDetail(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def delete(self,request,id,*args,**kwargs):
-        id = request.user.id
-        user = User.objects.get(id=id)
-        if id == user.id:
-            Response({"Error":"You can not delete an user that is not you"},status=status.HTTP_403_FORBIDDEN)
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if str(request.user.id) != str(id):
+            return Response(
+                {"error": "You can only delete your own user"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
         user.delete()
-        Response({"Status":"User deleted succesfully"})
+        return Response({"status": "User deleted successfully"}, status=status.HTTP_200_OK)
 
 
 
