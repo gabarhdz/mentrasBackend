@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Forum, User
+from .models import  User
+import json
 
 class UserSerializer(serializers.ModelSerializer):
     id=serializers.UUIDField(read_only=True)
@@ -52,10 +53,3 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class ForumSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(read_only=True)
-    created_at = serializers.DateTimeField(required=False)
-    users = UserSerializer()
-    class Meta:
-        model = Forum
-        fields = ['id','name','description','created_at','users']

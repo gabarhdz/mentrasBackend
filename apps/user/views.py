@@ -5,8 +5,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import ForumSerializer,UserSerializer
-from .models import Forum,User
+from .serializers import UserSerializer
+from .models import User
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -89,18 +89,7 @@ class UserDetail(APIView):
 
 
 
-class AllForums(APIView):
-    def get(self,request,*args,**kwargs):
-        forums = Forum.objects.all()
-        serializer = ForumSerializer(forums, many=True,context={'request':request})
-        return Response(serializer.data,status=200)
-    
-    def post(self,request,*args,**kwargs):
-        serializer = ForumSerializer(data = request.data, context={'request':request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.user.apps.UserConfig',
+    'apps.forum.apps.ForumConfig',
     'rest_framework',
     'rest_framework.authtoken',
     'allauth',
