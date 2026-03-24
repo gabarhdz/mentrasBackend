@@ -19,8 +19,8 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-#Initialize dotenv files
-load_dotenv()
+# Initialize dotenv (force root .env so system env vars don't override it)
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
