@@ -41,5 +41,10 @@ class Post(models.Model):
     title = models.CharField(max_length=100)
     text = models.TextField(max_length= 2000)
     forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="forum_posts",
+    )
     images = models.TextField(blank=True, default="[]", validators=[validate_post_images])
     created_at = models.DateTimeField(auto_now=True)
