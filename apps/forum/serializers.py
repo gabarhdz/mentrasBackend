@@ -3,9 +3,12 @@ from .models import ForumUser, Forum, Post
 from apps.user.serializers import UserSerializer
 
 class ForumSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
+
     class Meta:
         model = Forum
-        field = ['id','name','description','profile_pic','is_private','created_at']
+        fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 class PostSerializer(serializers.ModelSerializer):
     user = UserSerializer()
