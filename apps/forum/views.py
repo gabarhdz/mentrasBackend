@@ -4,10 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Forum,ForumUser,Post
-from .serializers import ForumSerializer
+from .serializers import ForumSerializer,PostSerializer
 
 
-class AllView(APIView):
+class AllForums(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
@@ -31,7 +31,7 @@ class AllView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class DetailView(APIView):
+class DetailedForums(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id, *args, **kwargs):
@@ -58,4 +58,44 @@ class DetailView(APIView):
                     user=request.user,
                     defaults={'isAdmin': True},
                 )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AllPost(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, id, *args, **kwargs):
+        try:
+            forum = Forum.objects.get(id=id)
+        except Forum.DoesNotExist:
+            return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        posts = Post.objects.filter(forum=forum).order_by('-created_at')
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DetailedPost(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        try:
+            post = Post.objects.get(id=id)
+        except Post.DoesNotExist:
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PostSerializer(post, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request, id, *args, **kwargs):       
+        try:
+            forum = Forum.objects.get(id=id)
+        except Forum.DoesNotExist:
+            return Response({'error': 'Forum does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PostSerializer(post, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid() and request.user.is_authenticated:
+            post.forum = forum  
+            post.user = request.user
+            post = serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
