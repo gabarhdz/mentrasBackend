@@ -20,13 +20,19 @@ class ForumSerializer(serializers.ModelSerializer):
         return value
 
 class PostSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(read_only=True)
     id = serializers.UUIDField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     forum_id = 0
     class Meta:
         model=Post
-        fields=['id','title','text','images','created_at','forum_id']
+        fields=['id','title','text','user','images','created_at','forum_id']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request is not None and request.user.is_authenticated:
+            validated_data['user'] = request.user
+        return super().create(validated_data)
 
     def validate_text(self,value):
         if profanity.contains_profanity(value):

@@ -64,15 +64,27 @@ class DetailedForums(APIView):
 class AllPost(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, id, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
+        posts = Post.objects.all().order_by('-created_at')
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        id = data.get('forum_id')
+
         try:
             forum = Forum.objects.get(id=id)
         except Forum.DoesNotExist:
             return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        posts = Post.objects.filter(forum=forum).order_by('-created_at')
-        serializer = PostSerializer(posts, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = PostSerializer(data=data, context={'request': request})
+        if serializer.is_valid() and request.user.is_authenticated:
+            post = serializer.save(forum=forum)
+            response_serializer = PostSerializer(post, context={'request': request})
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class DetailedPost(APIView):
     permission_classes = [IsAuthenticated]
@@ -86,16 +98,4 @@ class DetailedPost(APIView):
         serializer = PostSerializer(post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def post(self, request, id, *args, **kwargs):       
-        try:
-            forum = Forum.objects.get(id=id)
-        except Forum.DoesNotExist:
-            return Response({'error': 'Forum does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = PostSerializer(post, data=request.data, partial=True, context={'request': request})
-        if serializer.is_valid() and request.user.is_authenticated:
-            post.forum = forum  
-            post.user = request.user
-            post = serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
