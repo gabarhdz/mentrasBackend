@@ -98,4 +98,13 @@ class DetailedPost(APIView):
         serializer = PostSerializer(post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    def delete(self, request, id, *args, **kwargs):
+        try:
+            post = Post.objects.get(id=id)
+        except Post.DoesNotExist:
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+        if post.user != request.user:
+            return Response({'error': 'You do not have permission to delete this post'}, status=status.HTTP_403_FORBIDDEN)
+        post.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
