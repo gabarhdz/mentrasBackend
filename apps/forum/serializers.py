@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import ForumUser, Forum, Post
 from apps.user.serializers import UserSerializer
+from profanity_check import predict_prob
 
 class ForumSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
@@ -12,7 +13,14 @@ class ForumSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    id = serializers.UUIDField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
     forum_id = 0
     class Meta:
         model=Post
-        fields=['íd','title','text','images','created_at','forum_id']
+        fields=['id','title','text','images','created_at','forum_id']
+        
+    def validate_text(self,value):
+        if predict_prob([value])[0] > 0.5:
+            raise serializers.ValidationError("Inappropriate content detected in the post text.")
+        return value
