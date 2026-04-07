@@ -24,6 +24,10 @@ class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=80)
     content = models.TextField(max_length = 350)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_posts",
+    )
     forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now=True)
