@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import ForumUser, Forum, Post
 from apps.user.serializers import UserSerializer
-from profanity_check import predict_prob
+from better_profanity import profanity
 
 class ForumSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
@@ -11,11 +11,11 @@ class ForumSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at']
         read_only_fields = ['id', 'created_at']
     def validate_name(self, value):
-        if predict_prob([value])[0] > 0.5:
+        if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the forum name.")
         return value
     def validate_description(self, value): 
-        if predict_prob([value])[0] > 0.5:
+        if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the forum description.")
         return value
 
@@ -29,10 +29,10 @@ class PostSerializer(serializers.ModelSerializer):
         fields=['id','title','text','images','created_at','forum_id']
 
     def validate_text(self,value):
-        if predict_prob([value])[0] > 0.5:
+        if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the post text.")
         return value
     def validate_title(self,value):
-        if predict_prob([value])[0] > 0.5:
+        if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the post title.")
         return value
