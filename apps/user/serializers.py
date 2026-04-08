@@ -3,6 +3,14 @@ from .models import User
 import cloudinary.uploader
 
 
+class ProfilePicField(serializers.Field):
+    def to_internal_value(self, data):
+        return data
+
+    def to_representation(self, value):
+        return value
+
+
 class UserSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     password = serializers.CharField(write_only=True)
@@ -11,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_admin = serializers.BooleanField(default=False)
     is_mentor = serializers.BooleanField(default=False)
     phone_number = serializers.IntegerField(required=True)
-    profile_pic = serializers.CharField(required=False)
+    profile_pic = ProfilePicField(required=False)
 
     class Meta:
         model = User
