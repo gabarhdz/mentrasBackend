@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_admin = serializers.BooleanField(default=False)
     is_mentor = serializers.BooleanField(default=False)
     phone_number = serializers.IntegerField(required=True)
-    profile_pic = serializers.ImageField(required=False)
+    profile_pic = serializers.CharField(required=False)
 
     class Meta:
         model = User
