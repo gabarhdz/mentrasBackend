@@ -1,8 +1,14 @@
+from django.utils import timezone
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+
+import random
 import uuid
 # Create your models here.
+def generate_code():
+    return str(random.randint(100000, 999999))
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -12,6 +18,9 @@ class User(AbstractUser):
     is_mod = models.BooleanField(default=False)
     is_mentor = models.BooleanField(default=False)
     is_pyme_owner = models.BooleanField(default=False)
+    code = models.CharField(max_length=6, blank=True, null=True, default=generate_code)
+    is_email_verified = models.BooleanField(default=False)
+    code_expires_at = models.DateTimeField(blank=True, null=True,default=timezone.now() + timezone.timedelta(minutes=30))
 
 class Forum(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
