@@ -38,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             result = cloudinary.uploader.upload(
                 profile_pic_file,
                 folder="profile_pics",
+                public_id=str(validated_data.get('username', 'user_profile_pic')),
                 resource_type="image",
                 transformation=[
                     {"width": 500, "height": 500, "crop": "fill", "gravity": "face"},
