@@ -8,7 +8,7 @@ import random
 import uuid
 # Create your models here.
 def generate_code():
-    return str(random.randint(100000, 999999))
+    return f"{random.randint(0, 999999):06d}"
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
