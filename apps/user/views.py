@@ -1,5 +1,5 @@
 from venv import logger
-
+from django.utils import timezone
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
@@ -89,6 +89,20 @@ class UserDetail(APIView):
 
 
 
+
+class ActivateEmail(APIView):
+    def post(self,request,id,*args,**kwargs):
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
+        if request.data['code'] == user.code and timezone.now() <= user.code_expires_at:
+            user.is_email_verified = True
+            user.save()
+            return Response({'status':'Email verified successfully'},status=status.HTTP_200_OK)
+        else:
+            return Response({'error':'Invalid verification code or code expired'},status=status.HTTP_400_BAD_REQUEST)
+        
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"
