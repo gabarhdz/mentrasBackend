@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.microsoft',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -101,6 +102,14 @@ AUTH_USER_MODEL = 'user.User'
 
 SITE_ID = 1
 ACCOUNT_UNIQUE_EMAIL = True
+
+EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+
+ANYMAIL = {
+    "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
+}
+
+DEFAULT_FROM_EMAIL = "mentras.app@gmail.com"
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
