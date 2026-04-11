@@ -103,14 +103,15 @@ AUTH_USER_MODEL = 'user.User'
 SITE_ID = 1
 ACCOUNT_UNIQUE_EMAIL = True
 
-EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
-ANYMAIL = {
-    "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
-}
+EMAIL_HOST_USER = "mentras.app@gmail.com"
+EMAIL_HOST_PASSWORD = os.getenv("GOOGLE_APP_PASSWORD")
 
-DEFAULT_FROM_EMAIL = "mentras.app@gmail.com"
-
+DEFAULT_FROM_EMAIL = "Mentras <mentras.app@gmail.com>"
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
 AUTHENTICATION_BACKENDS = (

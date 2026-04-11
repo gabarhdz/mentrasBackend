@@ -1,6 +1,9 @@
+
 from venv import logger
 from django.utils import timezone
 from django.shortcuts import render
+from django.core.mail import EmailMultiAlternatives, send_mail
+from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -96,6 +99,20 @@ class ActivateEmail(APIView):
             user = User.objects.get(id=id)
         except User.DoesNotExist:
             return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
+        email = EmailMultiAlternatives(
+            subject="verification code",
+            body="Texto fallback",
+            from_email="Mentras <mentras.app@gmail.com>",
+            to=[user.email]
+        )
+
+        email.attach_alternative(
+            f"<h1>Hello {user.username} your code is: {user.code}!</h1>",
+            "text/html"
+        )
+
+        email.send()
+
         if request.data['code'] == user.code and timezone.now() <= user.code_expires_at:
             user.is_email_verified = True
             user.save()
