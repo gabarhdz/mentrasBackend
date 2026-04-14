@@ -1,8 +1,9 @@
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from apps.stock.models import Item,Menu
-from apps.stock.serializers import ItemSerializer,MenuSerializer,MenuItemSerializer
+from apps.stock.models import Item, Menu, MenuMovement
+from apps.stock.serializers import ItemSerializer, MenuSerializer, MenuItemSerializer
 
 from globals.permissions import IsEmailVerified
 
@@ -33,6 +34,7 @@ class AllMenus(APIView):
             menu = serializer.save()
             return Response(MenuSerializer(menu).data, status=201)
         return Response(serializer.errors, status=400)
+    
 
 class ItemsMenu(APIView):
     permission_classes = [IsEmailVerified]
@@ -41,11 +43,22 @@ class ItemsMenu(APIView):
             menu = Menu.objects.get(id=menu_id)
         except Menu.DoesNotExist:
             return Response({"error": "Menu not found"}, status=404)
-        
-        serializer = MenuItemSerializer(data=request.data)
+
+        payload = request.data.copy()
+        payload["menu"] = menu.id
+        serializer = MenuItemSerializer(data=payload)
         if serializer.is_valid():
-            item_ids = serializer.validated_data['item']
-            items = Item.objects.filter(id__in=item_ids)
-            menu.items.set(items)
+            with transaction.atomic():
+                menu_item = serializer.save()
+                MenuMovement.objects.create(
+                    menu=menu,
+                    item=menu_item.item,
+                    menu_item=menu_item,
+                    performed_by=request.user if request.user.is_authenticated else None,
+                    action=MenuMovement.Action.ITEM_ADDED,
+                    quantity=menu_item.quantity,
+                    details=f"Added {menu_item.item.name} to {menu.name}",
+                )
+
             return Response(MenuSerializer(menu).data, status=200)
-        return Response(serializer.errors, status=400   )
+        return Response(serializer.errors, status=400)

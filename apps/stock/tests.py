@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 from apps.stock.models import Item, Menu, MenuItem, MenuMovement
 from apps.stock.serializers import ItemSerializer
+from apps.stock.views import ItemsMenu
 
 
 class MenuMovementModelTests(TestCase):
@@ -64,3 +67,41 @@ class ItemSerializerTests(TestCase):
         serializer = ItemSerializer(data=payload)
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class ItemsMenuViewTests(TestCase):
+    def test_post_creates_menu_item_and_movement(self):
+        user = get_user_model().objects.create_user(
+            username="verified-user",
+            email="verified@example.com",
+            password="StrongPass123",
+        )
+        user.email_verified = True
+        menu = Menu.objects.create(
+            name="Breakfast",
+            description="Morning menu",
+        )
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=25,
+        )
+        request = APIRequestFactory().post(
+            f"/stock/menus/{menu.id}/items/",
+            {"item_id": item.id, "quantity": 3},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        menu_item = MenuItem.objects.get(menu=menu, item=item)
+        movement = MenuMovement.objects.get(menu_item=menu_item)
+        self.assertEqual(menu_item.quantity, 3)
+        self.assertEqual(movement.menu, menu)
+        self.assertEqual(movement.item, item)
+        self.assertEqual(movement.performed_by, user)
+        self.assertEqual(movement.action, MenuMovement.Action.ITEM_ADDED)
+        self.assertEqual(movement.quantity, 3)
