@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from apps.stock.models import Item, Menu, MenuItem, MenuMovement
+from apps.stock.serializers import ItemSerializer
 
 
 class MenuMovementModelTests(TestCase):
@@ -40,3 +41,26 @@ class MenuMovementModelTests(TestCase):
         self.assertEqual(menu.movements.get(), movement)
         self.assertEqual(user.menu_movements.get(), movement)
         self.assertEqual(str(movement), "Breakfast - Item added")
+
+
+class ItemSerializerTests(TestCase):
+    def test_requires_all_fields_for_item_creation(self):
+        serializer = ItemSerializer(data={})
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("name", serializer.errors)
+        self.assertIn("profile_pic", serializer.errors)
+        self.assertIn("price", serializer.errors)
+        self.assertIn("stock", serializer.errors)
+
+    def test_accepts_valid_item_payload(self):
+        payload = {
+            "name": "Coffee",
+            "profile_pic": "coffee.png",
+            "price": "4.50",
+            "stock": 25,
+        }
+
+        serializer = ItemSerializer(data=payload)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)

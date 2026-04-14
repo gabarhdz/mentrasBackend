@@ -8,6 +8,12 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ["id", "name", "profile_pic", "price", "stock"]
+        extra_kwargs = {
+            "name": {"required": True, "allow_blank": False},
+            "profile_pic": {"required": True, "allow_blank": False, "allow_null": False},
+            "price": {"required": True},
+            "stock": {"required": True},
+        }
 
 
 class MenuItemSerializer(serializers.ModelSerializer):

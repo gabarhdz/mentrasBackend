@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from apps.stock.models import Item
-from apps.stock.serializers import ItemSerializer
+from apps.stock.models import Item,Menu
+from apps.stock.serializers import ItemSerializer,MenuSerializer,MenuItemSerializer
 
 from globals.permissions import IsEmailVerified
 
@@ -19,3 +19,33 @@ class AllItems(APIView):
             item = serializer.save()
             return Response(ItemSerializer(item).data, status=201)
         return Response(serializer.errors, status=400)
+    
+class AllMenus(APIView):
+    permission_classes = [IsEmailVerified]
+    def get(self, request):
+        menus = Menu.objects.all()
+        serializer = MenuSerializer(menus, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = MenuSerializer(data=request.data)
+        if serializer.is_valid():
+            menu = serializer.save()
+            return Response(MenuSerializer(menu).data, status=201)
+        return Response(serializer.errors, status=400)
+
+class ItemsMenu(APIView):
+    permission_classes = [IsEmailVerified]
+    def post(self, request, menu_id):
+        try:
+            menu = Menu.objects.get(id=menu_id)
+        except Menu.DoesNotExist:
+            return Response({"error": "Menu not found"}, status=404)
+        
+        serializer = MenuItemSerializer(data=request.data)
+        if serializer.is_valid():
+            item_ids = serializer.validated_data['item']
+            items = Item.objects.filter(id__in=item_ids)
+            menu.items.set(items)
+            return Response(MenuSerializer(menu).data, status=200)
+        return Response(serializer.errors, status=400   )
