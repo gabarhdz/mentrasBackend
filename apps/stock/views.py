@@ -21,6 +21,17 @@ class AllItems(APIView):
             return Response(ItemSerializer(item).data, status=201)
         return Response(serializer.errors, status=400)
     
+class SpecItem(APIView):
+    permission_classes = [IsEmailVerified]
+    def get(self, request, item_id):
+        try:
+            item = Item.objects.get(id=item_id)
+        except Item.DoesNotExist:
+            return Response({"error": "Item not found"}, status=404)
+
+        serializer = ItemSerializer(item)
+        return Response(serializer.data)
+    
 class AllMenus(APIView):
     permission_classes = [IsEmailVerified]
     def get(self, request):
@@ -35,6 +46,16 @@ class AllMenus(APIView):
             return Response(MenuSerializer(menu).data, status=201)
         return Response(serializer.errors, status=400)
     
+class SpecMenu(APIView):
+    permission_classes = [IsEmailVerified]
+    def get(self, request, menu_id):
+        try:
+            menu = Menu.objects.get(id=menu_id)
+        except Menu.DoesNotExist:
+            return Response({"error": "Menu not found"}, status=404)
+
+        serializer = MenuSerializer(menu)
+        return Response(serializer.data)
 
 class ItemsMenu(APIView):
     permission_classes = [IsEmailVerified]
