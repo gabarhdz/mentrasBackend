@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import User
-import cloudinary.uploader
+
+from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -11,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_admin = serializers.BooleanField(default=False)
     is_mentor = serializers.BooleanField(default=False)
     phone_number = serializers.IntegerField(required=True)
-    profile_pic = serializers.ImageField(required=False)
+    profile_pic = CloudinaryImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -31,22 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         profile_pic_file = validated_data.pop('profile_pic', None)
-
-        profile_pic_url = ""
-
-        if profile_pic_file:
-            result = cloudinary.uploader.upload(
-                profile_pic_file,
-                folder="profile_pics",
-                public_id=str(validated_data.get('username', 'user_profile_pic')),
-                resource_type="image",
-                transformation=[
-                    {"width": 500, "height": 500, "crop": "fill", "gravity": "face"},
-                    {"quality": "auto"},
-                    {"fetch_format": "auto"}
-                ]
-            )
-            profile_pic_url = result["secure_url"]
+        profile_pic_url = upload_profile_pic(
+            profile_pic_file,
+            public_id=str(validated_data.get('username', 'user_profile_pic')),
+            folder="profile_pics",
+        ) or ""
 
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -70,19 +60,11 @@ class UserSerializer(serializers.ModelSerializer):
         profile_pic_file = validated_data.pop('profile_pic', None)
 
         if profile_pic_file:
-            result = cloudinary.uploader.upload(
+            instance.profile_pic = upload_profile_pic(
                 profile_pic_file,
-                folder="profile_pics",
                 public_id=str(instance.id),
                 overwrite=True,
-                resource_type="image",
-                transformation=[
-                    {"width": 500, "height": 500, "crop": "fill", "gravity": "face"},
-                    {"quality": "auto"},
-                    {"fetch_format": "auto"}
-                ]
             )
-            instance.profile_pic = result["secure_url"]
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

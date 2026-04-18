@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-
+import uuid
 
 class Item(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     profile_pic = models.CharField(max_length=255, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -18,6 +19,7 @@ class Item(models.Model):
 
 
 class Menu(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
 
@@ -26,6 +28,7 @@ class Menu(models.Model):
 
 
 class MenuItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     menu = models.ForeignKey(Menu, on_delete=models.CASCADE, related_name="menu_items")
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="menu_items")
     quantity = models.IntegerField(validators=[MinValueValidator(0)])
@@ -35,6 +38,7 @@ class MenuItem(models.Model):
 
 
 class MenuMovement(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Action(models.TextChoices):
         CREATED = "created", "Created"
         UPDATED = "updated", "Updated"

@@ -1,11 +1,27 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
+from unittest.mock import patch
 
 from apps.stock.models import Item, Menu, MenuItem, MenuMovement
 from apps.stock.serializers import ItemSerializer
 from apps.stock.views import ItemsMenu
+
+
+def build_test_image(name="test.gif"):
+    return SimpleUploadedFile(
+        name,
+        (
+            b"GIF87a\x01\x00\x01\x00\x80\x00\x00"
+            b"\x00\x00\x00\xff\xff\xff!\xf9\x04"
+            b"\x01\x00\x00\x00\x00,\x00\x00\x00"
+            b"\x00\x01\x00\x01\x00\x00\x02\x02D"
+            b"\x01\x00;"
+        ),
+        content_type="image/gif",
+    )
 
 
 class MenuMovementModelTests(TestCase):
@@ -56,10 +72,12 @@ class ItemSerializerTests(TestCase):
         self.assertIn("price", serializer.errors)
         self.assertIn("stock", serializer.errors)
 
-    def test_accepts_valid_item_payload(self):
+    @patch("globals.cloudinary.cloudinary.uploader.upload")
+    def test_accepts_valid_item_payload_and_persists_cloudinary_url(self, mock_upload):
+        mock_upload.return_value = {"secure_url": "https://cloudinary.example.com/coffee.gif"}
         payload = {
             "name": "Coffee",
-            "profile_pic": "coffee.png",
+            "profile_pic": build_test_image("coffee.gif"),
             "price": "4.50",
             "stock": 25,
         }
@@ -67,6 +85,9 @@ class ItemSerializerTests(TestCase):
         serializer = ItemSerializer(data=payload)
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+        item = serializer.save()
+        self.assertEqual(item.profile_pic, "https://cloudinary.example.com/coffee.gif")
+        mock_upload.assert_called_once()
 
 
 class ItemsMenuViewTests(TestCase):
