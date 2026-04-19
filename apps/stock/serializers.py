@@ -4,7 +4,6 @@ from rest_framework import serializers
 from apps.stock.models import Item, Menu, MenuItem, MenuMovement
 from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
-
 class ItemSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     profile_pic = CloudinaryImageField(required=True, allow_null=False)
@@ -75,6 +74,7 @@ class MenuMovementSerializer(serializers.ModelSerializer):
         source="menu",
         write_only=True,
     )
+    item = ItemSerializer(read_only=True)
     item_id = serializers.PrimaryKeyRelatedField(
         queryset=Item.objects.all(),
         source="item",
