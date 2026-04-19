@@ -16,6 +16,9 @@ class ForumSerializer(serializers.ModelSerializer):
             forum.profile_pic = upload_profile_pic(
                 profile_pic_file,
                 public_id=str(forum.id),
+                folder="forum_pics",
+                
+
             )
             forum.save(update_fields=["profile_pic"])
 

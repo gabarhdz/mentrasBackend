@@ -4,11 +4,6 @@ import cloudinary.uploader
 from rest_framework import serializers
 
 
-PROFILE_PIC_TRANSFORMATIONS = [
-    {"width": 500, "height": 500, "crop": "fill", "gravity": "face"},
-    {"quality": "auto"},
-    {"fetch_format": "auto"},
-]
 
 
 class CloudinaryImageField(serializers.ImageField):
@@ -22,9 +17,18 @@ def upload_profile_pic(
     file,
     *,
     folder,
+    width=500,
+    height=500,
     public_id=None,
     overwrite=False,
 ):
+
+    PROFILE_PIC_TRANSFORMATIONS = [
+        {"width": width, "height": height   , "crop": "fill", "gravity": "face"},
+        {"quality": "auto"},
+        {"fetch_format": "auto"},
+    ]
+
     if not file:
         return None
 

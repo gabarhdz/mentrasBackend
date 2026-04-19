@@ -28,6 +28,8 @@ class ItemSerializer(serializers.ModelSerializer):
                 profile_pic_file,
                 public_id=str(instance.id),
                 folder="item_pics",
+                width=1000,
+                height=1000,
                 overwrite=True,
             )
 
