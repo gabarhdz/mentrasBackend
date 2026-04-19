@@ -2,9 +2,44 @@ from rest_framework import serializers
 from .models import ForumUser, Forum, Post
 from apps.user.serializers import UserSerializer
 from better_profanity import profanity
+from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
 class ForumSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
+    profile_pic = CloudinaryImageField(required=False, allow_null=True)
+
+    def create(self, validated_data):
+        profile_pic_file = validated_data.pop("profile_pic", None)
+        forum = Forum.objects.create(**validated_data)
+
+        if profile_pic_file:
+            forum.profile_pic = upload_profile_pic(
+                profile_pic_file,
+                public_id=str(forum.id),
+                folder="forum_pics",
+                
+
+            )
+            forum.save(update_fields=["profile_pic"])
+
+        return forum
+
+    def update(self, instance, validated_data):
+        profile_pic_file = validated_data.pop("profile_pic", None)
+
+        if profile_pic_file:
+            instance.profile_pic = upload_profile_pic(
+                profile_pic_file,
+                folder="forum_pics",
+                public_id=str(instance.id),
+                overwrite=True,
+            )
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
     class Meta:
         model = Forum
