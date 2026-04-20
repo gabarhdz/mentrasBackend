@@ -128,6 +128,10 @@ class ActivateEmail(APIView):
             return Response({'error':'Invalid verification code or code expired'},status=status.HTTP_400_BAD_REQUEST)
         
 class GoogleLogin(SocialLoginView):
+    permission_classes = [AllowAny]
     adapter_class = GoogleOAuth2Adapter
     callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"
     client_class = OAuth2Client
+    def post(self, request, *args, **kwargs):
+            print("DATA:", request.data)
+            return super().post(request, *args, **kwargs)
