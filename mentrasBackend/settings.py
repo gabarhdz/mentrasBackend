@@ -75,10 +75,14 @@ MIDDLEWARE = [
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
         'APP': {
             'client_id': os.getenv('GOOGLE_CLIENT_ID'),
             'secret': os.getenv('GOOGLE_SECRET'),
-            'key': os.getenv('GOOGLE_KEY')
+            'key': ''
         }
     },
     'facebook': {
@@ -100,6 +104,7 @@ SOCIALACCOUNT_PROVIDERS = {
 ROOT_URLCONF = 'mentrasBackend.urls'
 
 AUTH_USER_MODEL = 'user.User'
+
 
 SITE_ID = 1
 ACCOUNT_UNIQUE_EMAIL = True
