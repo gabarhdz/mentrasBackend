@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import UserSerializer
-from .models import Forum,User
+from .models import Forum,User,generate_code
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -126,7 +126,34 @@ class ActivateEmail(APIView):
             return Response({'status':'Email verified successfully'},status=status.HTTP_200_OK)
         else:
             return Response({'error':'Invalid verification code or code expired'},status=status.HTTP_400_BAD_REQUEST)
+
+class ResendCode(APIView):
+    def post(self,request,id,*args,**kwargs):
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
         
+        user.code = generate_code()
+        user.code_expires_at = timezone.now() + timezone.timedelta(minutes=30)
+        user.save()
+
+        email = EmailMultiAlternatives(
+            subject="verification code",
+            body=f"Hello {user.username}, your activation code is: {user.code}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+
+        email.attach_alternative(
+            f"<h1>Hello {user.username}, your code is: {user.code}!</h1>",
+            "text/html"
+        )
+
+        email.send(fail_silently=False)
+
+        return Response({'status':'Verification code resent successfully'},status=status.HTTP_200_OK)
+      
 class GoogleLogin(SocialLoginView):
     permission_classes = [AllowAny]
     adapter_class = GoogleOAuth2Adapter
