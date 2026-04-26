@@ -33,6 +33,15 @@ class AccountPymes(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class MyPymes(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, *args, **kwargs):
+        pymes = Pyme.objects.filter(owner=request.user).order_by("-access_date")
+        serializer = PymeSerializer(pymes, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class PymeDetail(APIView):
     permission_classes = [IsEmailVerified]
 
@@ -62,13 +71,9 @@ class PymeDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, id, *args, **kwargs):
-        try:
-            pyme = Pyme.objects.get(id=id)
-        except Pyme.DoesNotExist:
-            return Response(
-                {"error": "Pyme not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        pyme, error_response = self.get_object(request, id)
+        if error_response:
+            return error_response
 
         serializer = PymeSerializer(
             pyme,
@@ -85,18 +90,6 @@ class PymeDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id, *args, **kwargs):
-        try:
-            pyme = Pyme.objects.get(id=id)
-        except Pyme.DoesNotExist:
-            return Response(
-                {"error": "Pyme not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        if pyme.owner != request.user:
-            return Response(
-                {"error": "You do not have permission to delete this pyme."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         pyme, error_response = self.get_object(request, id)
         if error_response:
             return error_response
