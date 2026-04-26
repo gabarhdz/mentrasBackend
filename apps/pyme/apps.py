@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PymeConfig(AppConfig):
-    name = 'pyme'
+    name = 'apps.pyme'
