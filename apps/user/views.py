@@ -157,65 +157,48 @@ class ResendCode(APIView):
 
         return Response({'status':'Verification code resent successfully'},status=status.HTTP_200_OK)
       
-class GoogleLogin(SocialLoginView):
+class GoogleLogin(APIView):
     permission_classes = [AllowAny]
-    adapter_class = GoogleOAuth2Adapter
-    callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"
-    client_class = OAuth2Client
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         google_client_id = os.getenv("GOOGLE_CLIENT_ID")
-        token_from_frontend = (
-            request.data.get("credential")
-            or request.data.get("id_token")
-            or request.data.get("access_token")
-            or request.data.get("token")
-        )
+
+        google_token = request.data.get("id_token") or request.data.get("credential")
 
         if not google_client_id:
-            logger.error("GOOGLE_CLIENT_ID is not configured")
             return Response(
-                {"error": "Google login is not configured"},
+                {"error": "GOOGLE_CLIENT_ID is not configured"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        if not token_from_frontend:
+        if not google_token:
             return Response(
-                {
-                    "error": (
-                        "Google token not provided. Send one of: "
-                        "credential, id_token, access_token, or token."
-                    )
-                },
+                {"error": "Google token not provided"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             idinfo = id_token.verify_oauth2_token(
-                token_from_frontend,
+                google_token,
                 requests.Request(),
                 google_client_id,
             )
+
         except ValueError:
             return Response(
                 {"error": "Invalid Google token"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         except GoogleAuthError as exc:
-            logger.warning("Google auth error during login: %s", exc)
+            logger.warning("Google auth error: %s", exc)
             return Response(
                 {"error": "Unable to verify Google token"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        except Exception as exc:
-            logger.exception("Unexpected Google login error: %s", exc)
-            return Response(
-                {"error": "Unexpected error during Google login"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         email = idinfo.get("email")
-        name = idinfo.get("name")
+        name = idinfo.get("name", "")
 
         if not email:
             return Response(
@@ -227,9 +210,10 @@ class GoogleLogin(SocialLoginView):
             email=email,
             defaults={
                 "username": email,
-                "first_name": name or "",
-            }
+                "first_name": name,
+            },
         )
+
         tokens = get_tokens_for_user(user)
 
         return Response(
@@ -238,6 +222,7 @@ class GoogleLogin(SocialLoginView):
                     "id": user.id,
                     "email": user.email,
                     "username": user.username,
+                    "first_name": user.first_name,
                 },
                 "tokens": tokens,
                 "created": created,
