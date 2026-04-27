@@ -1,18 +1,21 @@
 
 import logging
+import os
 
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import render
-from django.core.mail import EmailMultiAlternatives, send_mail
-from django.http import JsonResponse
+from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from google.auth.exceptions import GoogleAuthError
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import UserSerializer
 from .models import Forum,User,generate_code
+from globals.get_tokens import get_tokens_for_user
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -159,6 +162,85 @@ class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"
     client_class = OAuth2Client
+
     def post(self, request, *args, **kwargs):
-            print("DATA:", request.data)
-            return super().post(request, *args, **kwargs)
+        google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+        token_from_frontend = (
+            request.data.get("credential")
+            or request.data.get("id_token")
+            or request.data.get("access_token")
+            or request.data.get("token")
+        )
+
+        if not google_client_id:
+            logger.error("GOOGLE_CLIENT_ID is not configured")
+            return Response(
+                {"error": "Google login is not configured"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not token_from_frontend:
+            return Response(
+                {
+                    "error": (
+                        "Google token not provided. Send one of: "
+                        "credential, id_token, access_token, or token."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token_from_frontend,
+                requests.Request(),
+                google_client_id,
+            )
+        except ValueError:
+            return Response(
+                {"error": "Invalid Google token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except GoogleAuthError as exc:
+            logger.warning("Google auth error during login: %s", exc)
+            return Response(
+                {"error": "Unable to verify Google token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as exc:
+            logger.exception("Unexpected Google login error: %s", exc)
+            return Response(
+                {"error": "Unexpected error during Google login"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        email = idinfo.get("email")
+        name = idinfo.get("name")
+
+        if not email:
+            return Response(
+                {"error": "Google token does not contain an email"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                "username": email,
+                "first_name": name or "",
+            }
+        )
+        tokens = get_tokens_for_user(user)
+
+        return Response(
+            {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                },
+                "tokens": tokens,
+                "created": created,
+            },
+            status=status.HTTP_200_OK,
+        )
