@@ -198,34 +198,3 @@ python manage.py runserver
 
 The API will be available at `http://127.0.0.1:8000/`.
 
-## Testing
-
-Run the test suite with:
-
-```bash
-python manage.py test
-```
-
-## What A Recruiter Should Take Away
-
-This project shows a backend developer who can connect product ideas to implementation details. It is not only an authentication demo and not only a CRUD API. It combines:
-
-- user lifecycle management,
-- social login,
-- role-aware permissions,
-- moderated user-generated content,
-- media handling,
-- operational stock logic,
-- and owner-scoped business data.
-
-That mix is valuable because it reflects the kind of real product work teams actually ship: community, operations, permissions, integrations, and maintainable backend structure in one codebase.
-
-## Good Next Improvements
-
-The backend already has a solid base. Logical next steps would be:
-
-- broader automated test coverage, especially around auth and permissions,
-- OpenAPI or Swagger documentation,
-- product and order endpoints for the `pyme` commerce layer,
-- stronger role-based authorization rules,
-- and containerized local setup for faster onboarding.
