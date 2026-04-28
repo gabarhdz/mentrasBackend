@@ -1,133 +1,163 @@
 # Mentras Backend
 
-`Mentras Backend` is a Django REST API that powers a community and operations platform oriented to mentors, moderators, and small business owners. The project combines user management, collaborative forums, and inventory/menu workflows in a single backend designed to support both engagement and day-to-day business activity.
+`Mentras Backend` is a `Django REST Framework` API for a platform that combines community features with small-business operations. It supports user onboarding, forum-based interaction, inventory and menu workflows, and business-profile management for SME owners.
 
-This repository is especially useful to share with recruiters or technical reviewers because it shows practical backend work around authentication, role-aware users, media handling, transactional business logic, and modular API design.
+This repository is a strong portfolio project for recruiters because it goes beyond basic CRUD. It shows authentication, role-aware access, third-party integrations, transactional stock updates, content moderation, media uploads, and a modular backend structure that can grow into a larger product.
 
-## Project Overview
+## What The Product Does
 
-The backend is structured around three main domains:
+The backend is designed around a practical idea: one platform where users can participate in communities while business owners manage parts of their operation.
 
-- `User management`: account creation, JWT authentication, Google social login, email verification, profile pictures, and role flags such as mentor or SME owner.
-- `Community forums`: creation of forums, forum posts, moderation-friendly validations, media-ready forum entities, and profanity filtering on user-generated content.
-- `Stock and menus`: item registration, menu composition, stock deduction when items are assigned to menus, and movement logs to track operational actions.
+Current implemented domains:
 
-Together, these modules suggest a product that is more than a simple CRUD API. It supports community interaction while also handling operational workflows that matter to small businesses.
+- `Users and access`: account creation, JWT login, email verification, Google login, profile updates, and role flags.
+- `Forums`: public forum discovery, forum creation, image-backed forum profiles, posting, and moderation-friendly validation.
+- `Inventory and menus`: item registration, menu creation, menu-item assignment, stock deduction, and movement history.
+- `PyME management`: creation and maintenance of SME profiles linked to verified owner accounts.
 
-## Why This Project Matters
+There is also data-model groundwork for a future commerce layer through `Product`, `Order`, and `ProductOrder` models in the `pyme` app.
 
-From a recruiter perspective, this project demonstrates:
+## Why This Project Is Relevant
 
-- Experience building a multi-module backend with clear separation of concerns.
-- Practical use of `Django`, `Django REST Framework`, and `PostgreSQL`.
-- Implementation of secure authentication with `JWT`.
-- Integration of third-party services such as `Cloudinary`, `Google OAuth`, and SMTP email delivery.
-- Handling of business rules with transactions and validation, not just data persistence.
-- Familiarity with custom permissions, file uploads, serializer-driven APIs, and automated tests.
+From an engineering and hiring perspective, this codebase demonstrates:
 
-## Core Features
+- building a multi-app backend with clear domain boundaries,
+- using a custom `User` model with UUID primary keys,
+- implementing `JWT`-based authentication and token refresh,
+- integrating external services like `Cloudinary`, `Google OAuth`, and email delivery,
+- enforcing business rules with serializer validation and database transactions,
+- handling media uploads in API workflows,
+- and protecting operational endpoints with custom permissions.
 
-### 1. Authentication and user lifecycle
+## Main Features
 
-- Custom `User` model with UUID primary keys.
-- Registration endpoint with email verification code delivery.
-- Login and token refresh using `SimpleJWT`.
-- Google social authentication via `dj-rest-auth` and `django-allauth`.
-- Role support for admin, moderator, mentor, and SME owner profiles.
-- Profile image upload and transformation through `Cloudinary`.
+### 1. User accounts and authentication
 
-### 2. Forum system
+- Custom `User` model extending `AbstractUser`.
+- UUID-based user identifiers.
+- Registration endpoint that sends a 6-digit verification code by email.
+- Email activation flow with expiration handling.
+- JWT login and refresh using `SimpleJWT`.
+- Google sign-in flow that verifies the Google ID token server-side.
+- Profile editing and self-service account deletion.
+- Role flags such as `is_admin`, `is_mod`, `is_mentor`, and `is_pyme_owner`.
 
-- Public listing and creation of forums.
+### 2. Community forums
+
+- Forum listing and creation.
 - Forum detail retrieval for authenticated users.
-- Post creation and deletion tied to authenticated users.
-- Optional forum images hosted on `Cloudinary`.
-- Profanity filtering for forum names, descriptions, and post content.
-- Support for storing multiple post images as validated JSON.
+- Optional forum profile image upload through `Cloudinary`.
+- Automatic creation of a `ForumUser` admin relationship when an authenticated user creates a forum.
+- Post creation tied to the authenticated author.
+- Optional post image lists stored as validated JSON.
+- Profanity filtering on forum names, descriptions, post titles, and post text.
+- Author-only deletion for posts.
 
-### 3. Stock and menu workflows
+### 3. Inventory and menu operations
 
-- CRUD-style item and menu creation endpoints.
-- Media-backed item images.
-- Linking items to menus with quantities.
-- Automatic stock deduction when an item is assigned to a menu.
-- Movement tracking through a dedicated `MenuMovement` model.
-- Access protected by a custom permission requiring verified email addresses.
+- Item creation with image upload.
+- Menu creation and retrieval.
+- Menu composition through `MenuItem`.
+- Stock deduction when an item is attached to a menu.
+- Inventory protection against insufficient stock.
+- Atomic write flow so stock and menu assignment remain consistent.
+- `MenuMovement` audit trail capturing who performed an action, what changed, and when.
 
-## Tech Stack
+### 4. SME / PyME ownership module
 
-- `Python`
-- `Django 6`
-- `Django REST Framework`
-- `PostgreSQL`
-- `SimpleJWT`
-- `dj-rest-auth`
-- `django-allauth`
-- `Cloudinary`
-- `SMTP / Gmail`
-- `better-profanity`
+- Verified business owners can create and manage their own `Pyme` records.
+- Each `Pyme` supports category linkage, profile image, description, and foundation date.
+- Owners can list only their own businesses and update or delete them.
+- Access is restricted so one owner cannot read or mutate another owner’s `Pyme`.
 
-## Architecture Snapshot
+## Architecture
 
-The codebase is organized into Django apps, which makes the domain boundaries easy to follow:
+The repository is organized as separate Django apps, which keeps the product domains easy to understand and extend:
 
 ```text
 mentrasBackend/
 ├── apps/
-│   ├── user/   # authentication, profile management, email verification
-│   ├── forum/  # forums, posts, moderation-oriented validations
-│   └── stock/  # items, menus, stock deductions, movement logs
-├── globals/    # shared permissions and Cloudinary helpers
+│   ├── user/    # auth, profiles, email verification, Google login
+│   ├── forum/   # forums, posts, moderation, forum membership/admin links
+│   ├── stock/   # items, menus, stock deduction, movement logs
+│   └── pyme/    # SME profiles and future commerce groundwork
+├── globals/     # shared helpers for permissions, tokens, Cloudinary
 ├── mentrasBackend/
 │   ├── settings.py
 │   └── urls.py
 └── manage.py
 ```
 
-This structure makes the project easy to extend and signals a good foundation for future scaling into additional product modules.
+This structure is one of the strongest signals in the project: the backend is not written as a single monolith file set, but as separate functional modules with focused responsibilities.
 
-## API Highlights
+## API Overview
 
-Main route groups:
+Base route groups:
 
 - `/api/user/`
 - `/api/forum/`
 - `/api/stock/`
+- `/api/pyme/`
 - `/api/accounts/`
 
 Representative endpoints:
 
-- `POST /api/user/` creates a user and sends an email verification code.
-- `POST /api/user/login/` issues access and refresh JWT tokens.
-- `POST /api/user/activate-email/<uuid:id>/` verifies the user email.
+- `POST /api/user/` creates a new user and sends the verification code.
+- `POST /api/user/login/` returns access and refresh JWT tokens.
+- `POST /api/user/login/refresh/` refreshes the access token.
+- `POST /api/user/activate-email/<uuid:id>/` verifies the email with a code.
+- `POST /api/user/resend-code/<uuid:id>/` sends a new verification code.
+- `POST /api/user/accounts/google/` signs in or registers with Google.
 - `GET /api/forum/` lists forums.
+- `POST /api/forum/` creates a forum.
 - `POST /api/forum/post/` creates a forum post.
+- `DELETE /api/forum/post/<uuid:id>/` deletes a post if the requester is the author.
 - `POST /api/stock/items/` creates an inventory item.
 - `POST /api/stock/menus/` creates a menu.
-- `POST /api/stock/menus/<uuid:menu_id>/items/` assigns an item to a menu and updates stock.
-- `GET /api/stock/menus/<uuid:menu_id>/movements/` returns the movement history for auditability.
+- `POST /api/stock/menus/<uuid:menu_id>/items/` adds an item to a menu and updates stock.
+- `GET /api/stock/menus/<uuid:menu_id>/movements/` returns the audit log for that menu.
+- `GET /api/pyme/` lists the authenticated owner’s businesses.
+- `POST /api/pyme/` creates a new `Pyme` if the account is marked as a business owner.
+- `GET /api/pyme/<uuid:id>/` returns a specific owner-controlled `Pyme`.
+- `PATCH /api/pyme/<uuid:id>/` updates a `Pyme`.
+- `DELETE /api/pyme/<uuid:id>/` removes a `Pyme`.
 
-## Business Logic Worth Noticing
+## Engineering Details Worth Noticing
 
-Some implementation details that are valuable from an engineering standpoint:
+These are the kinds of implementation details that matter in a technical review:
 
-- User emails are verified through generated short-lived codes.
-- Sensitive API areas rely on authentication and custom permission checks.
-- Stock updates are wrapped in database transactions to keep inventory consistent.
-- Uploaded images are normalized through Cloudinary transformations.
-- Content moderation is embedded in serializers rather than left entirely to the frontend.
-- UUID-based identifiers help avoid predictable incremental IDs in public APIs.
+- `UUIDs` are used across the main entities instead of predictable incremental IDs.
+- Email verification is part of the account lifecycle, not an afterthought.
+- Google authentication is validated on the backend rather than blindly trusted from the client.
+- Media uploads are abstracted through shared Cloudinary helpers.
+- Forum and post moderation rules live in serializers, which keeps the API defensive.
+- Inventory changes use `transaction.atomic()` and stock-level checks to avoid inconsistent writes.
+- Operational activity is logged through `MenuMovement`, which adds auditability to menu changes.
+- The `IsEmailVerified` permission guards business-sensitive endpoints.
+
+## Tech Stack
+
+- `Python`
+- `Django`
+- `Django REST Framework`
+- `PostgreSQL`
+- `djangorestframework-simplejwt`
+- `dj-rest-auth`
+- `django-allauth`
+- `Cloudinary`
+- `Google OAuth`
+- `better-profanity`
 
 ## Local Setup
 
 ### Prerequisites
 
-- `Python 3.12+` recommended
+- `Python 3.12+`
 - `PostgreSQL`
-- A configured `Cloudinary` account
-- SMTP credentials for outbound email
+- a `Cloudinary` account
+- SMTP credentials for sending verification emails
 
-### Installation
+### Install dependencies
 
 ```bash
 python -m venv venv
@@ -137,7 +167,7 @@ pip install -r requirements.txt
 
 ### Environment variables
 
-Create a `.env` file in the project root with values for:
+Create a `.env` file in the project root:
 
 ```env
 DB_NAME=
@@ -159,7 +189,7 @@ MICROSOFT_SECRET=
 MICROSOFT_KEY=
 ```
 
-### Run locally
+### Run the project
 
 ```bash
 python manage.py migrate
@@ -170,30 +200,32 @@ The API will be available at `http://127.0.0.1:8000/`.
 
 ## Testing
 
-The repository already includes automated tests for parts of the `forum` and `stock` domains. Run them with:
+Run the test suite with:
 
 ```bash
 python manage.py test
 ```
 
-## What Recruiters Can Take Away
+## What A Recruiter Should Take Away
 
-This is not a tutorial-level backend. It shows a developer working across product thinking and implementation details:
+This project shows a backend developer who can connect product ideas to implementation details. It is not only an authentication demo and not only a CRUD API. It combines:
 
-- translating a product idea into bounded backend modules,
-- designing authenticated REST endpoints,
-- integrating external services responsibly,
-- modeling business workflows beyond simple CRUD,
-- and keeping the codebase structured enough to keep growing.
+- user lifecycle management,
+- social login,
+- role-aware permissions,
+- moderated user-generated content,
+- media handling,
+- operational stock logic,
+- and owner-scoped business data.
 
-If you are reviewing this project as a recruiter or hiring manager, the strongest signal is its combination of community features and operational logic in one coherent API.
+That mix is valuable because it reflects the kind of real product work teams actually ship: community, operations, permissions, integrations, and maintainable backend structure in one codebase.
 
-## Possible Next Steps
+## Good Next Improvements
 
-If this project continues evolving, strong next improvements would be:
+The backend already has a solid base. Logical next steps would be:
 
-- richer test coverage across authentication and permissions,
-- Docker support for easier onboarding,
-- API documentation with OpenAPI or Swagger,
-- role-based authorization refinement,
-- and production-ready environment separation for security settings.
+- broader automated test coverage, especially around auth and permissions,
+- OpenAPI or Swagger documentation,
+- product and order endpoints for the `pyme` commerce layer,
+- stronger role-based authorization rules,
+- and containerized local setup for faster onboarding.
