@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.user.apps.UserConfig',
     'apps.forum.apps.ForumConfig',
     'apps.stock.apps.StockConfig',
+    'apps.pyme.apps.PymeConfig',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -174,6 +175,9 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
 ]
 
 # Password validation

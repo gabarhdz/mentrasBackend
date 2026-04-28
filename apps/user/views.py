@@ -1,18 +1,22 @@
 
 import logging
+import os
 
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import render
-from django.core.mail import EmailMultiAlternatives, send_mail
-from django.http import JsonResponse
+from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.utils.text import slugify
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from google.auth.exceptions import GoogleAuthError
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import UserSerializer
-from .models import Forum,User
+from .models import Forum,User,generate_code
+from globals.get_tokens import get_tokens_for_user
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
@@ -20,6 +24,18 @@ from dj_rest_auth.registration.views import SocialLoginView
 logger = logging.getLogger(__name__)
 
 # Create your views here.
+
+
+def build_google_username(name, email, current_user_id=None):
+    base_username = slugify(name or "") or email.split("@")[0]
+    username = base_username
+    suffix = 1
+
+    while User.objects.filter(username=username).exclude(id=current_user_id).exists():
+        username = f"{base_username}{suffix}"
+        suffix += 1
+
+    return username
 
 class AllUsers(APIView):
     permission_classes=[AllowAny]
@@ -126,12 +142,130 @@ class ActivateEmail(APIView):
             return Response({'status':'Email verified successfully'},status=status.HTTP_200_OK)
         else:
             return Response({'error':'Invalid verification code or code expired'},status=status.HTTP_400_BAD_REQUEST)
+
+class ResendCode(APIView):
+    def post(self,request,id,*args,**kwargs):
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error':'User not found'},status=status.HTTP_404_NOT_FOUND)
         
-class GoogleLogin(SocialLoginView):
+        user.code = generate_code()
+        user.code_expires_at = timezone.now() + timezone.timedelta(minutes=30)
+        user.save()
+
+        email = EmailMultiAlternatives(
+            subject="verification code",
+            body=f"Hello {user.username}, your activation code is: {user.code}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+
+        email.attach_alternative(
+            f"<h1>Hello {user.username}, your code is: {user.code}!</h1>",
+            "text/html"
+        )
+
+        email.send(fail_silently=False)
+
+        return Response({'status':'Verification code resent successfully'},status=status.HTTP_200_OK)
+      
+class GoogleLogin(APIView):
     permission_classes = [AllowAny]
-    adapter_class = GoogleOAuth2Adapter
-    callback_url = "http://127.0.0.1:8000/api/accounts/google/login/callback/"
-    client_class = OAuth2Client
-    def post(self, request, *args, **kwargs):
-            print("DATA:", request.data)
-            return super().post(request, *args, **kwargs)
+
+    def post(self, request):
+        google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+
+        google_token = request.data.get("id_token") or request.data.get("credential")
+
+        if not google_client_id:
+            return Response(
+                {"error": "GOOGLE_CLIENT_ID is not configured"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not google_token:
+            return Response(
+                {"error": "Google token not provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                google_token,
+                requests.Request(),
+                google_client_id,
+            )
+
+        except ValueError:
+            return Response(
+                {"error": "Invalid Google token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except GoogleAuthError as exc:
+            logger.warning("Google auth error: %s", exc)
+            return Response(
+                {"error": "Unable to verify Google token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = idinfo.get("email")
+        name = idinfo.get("name", "")
+        picture = idinfo.get("picture", "")
+
+        if not email:
+            return Response(
+                {"error": "Google token does not contain an email"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(email=email).first()
+        created = user is None
+        username = build_google_username(name, email, getattr(user, "id", None))
+
+        if created:
+            user = User.objects.create_user(
+                email=email,
+                username=username,
+                first_name=name,
+                profile_pic=picture,
+                is_email_verified=True,
+            )
+        else:
+            updated_fields = []
+
+            if user.username != username:
+                user.username = username
+                updated_fields.append("username")
+
+            if user.first_name != name:
+                user.first_name = name
+                updated_fields.append("first_name")
+
+            if picture and user.profile_pic != picture:
+                user.profile_pic = picture
+                updated_fields.append("profile_pic")
+
+            if not user.is_email_verified:
+                user.is_email_verified = True
+                updated_fields.append("is_email_verified")
+
+            if updated_fields:
+                user.save(update_fields=updated_fields)
+
+        tokens = get_tokens_for_user(user)
+
+        return Response(
+            {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                },
+                "tokens": tokens,
+                "created": created,
+            },
+            status=status.HTTP_200_OK,
+        )
