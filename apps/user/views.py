@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.utils.text import slugify
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from google.auth.exceptions import GoogleAuthError
@@ -23,6 +24,18 @@ from dj_rest_auth.registration.views import SocialLoginView
 logger = logging.getLogger(__name__)
 
 # Create your views here.
+
+
+def build_google_username(name, email, current_user_id=None):
+    base_username = slugify(name or "") or email.split("@")[0]
+    username = base_username
+    suffix = 1
+
+    while User.objects.filter(username=username).exclude(id=current_user_id).exists():
+        username = f"{base_username}{suffix}"
+        suffix += 1
+
+    return username
 
 class AllUsers(APIView):
     permission_classes=[AllowAny]
@@ -199,6 +212,7 @@ class GoogleLogin(APIView):
 
         email = idinfo.get("email")
         name = idinfo.get("name", "")
+        picture = idinfo.get("picture", "")
 
         if not email:
             return Response(
@@ -206,13 +220,39 @@ class GoogleLogin(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                "username": email,
-                "first_name": name,
-            },
-        )
+        user = User.objects.filter(email=email).first()
+        created = user is None
+        username = build_google_username(name, email, getattr(user, "id", None))
+
+        if created:
+            user = User.objects.create_user(
+                email=email,
+                username=username,
+                first_name=name,
+                profile_pic=picture,
+                is_email_verified=True,
+            )
+        else:
+            updated_fields = []
+
+            if user.username != username:
+                user.username = username
+                updated_fields.append("username")
+
+            if user.first_name != name:
+                user.first_name = name
+                updated_fields.append("first_name")
+
+            if picture and user.profile_pic != picture:
+                user.profile_pic = picture
+                updated_fields.append("profile_pic")
+
+            if not user.is_email_verified:
+                user.is_email_verified = True
+                updated_fields.append("is_email_verified")
+
+            if updated_fields:
+                user.save(update_fields=updated_fields)
 
         tokens = get_tokens_for_user(user)
 
