@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
 
-from .models import Pyme
-from .serializers import PymeSerializer
+from .models import Pyme, Category
+from .serializers import CategorySerializer, PymeSerializer
 
 
 class AccountPymes(APIView):
@@ -96,3 +96,12 @@ class PymeDetail(APIView):
 
         pyme.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CategoryList(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.all().order_by("name")
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
