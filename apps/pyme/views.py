@@ -2,6 +2,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.user.models import User
+from apps.user.models import User
+from apps.user.serializers import UserSerializer
 from globals.permissions import IsEmailVerified
 
 from .models import Pyme, Category
@@ -12,7 +15,7 @@ class AccountPymes(APIView):
     permission_classes = [IsEmailVerified]
 
     def get(self, request, *args, **kwargs):
-        pymes = Pyme.objects.filter(owner=request.user).order_by("-access_date")
+        pymes = Pyme.objects.all().order_by("-access_date")
         serializer = PymeSerializer(pymes, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -105,3 +108,90 @@ class CategoryList(APIView):
         categories = Category.objects.all().order_by("name")
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class PymeEmployees(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, id, *args, **kwargs):
+        try:
+            pyme = Pyme.objects.get(id=id)
+        except Pyme.DoesNotExist:
+            return Response(
+                {"error": "Pyme not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if pyme.owner != request.user:
+            return Response(
+                {"error": "You do not have permission to access this pyme."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        employees = pyme.employees.all()
+        serializer = UserSerializer(employees, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    def post(self, request, id, *args, **kwargs):
+        try:
+            pyme = Pyme.objects.get(id=id)
+        except Pyme.DoesNotExist:
+            return Response(
+                {"error": "Pyme not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if pyme.owner != request.user:
+            return Response(
+                {"error": "You do not have permission to access this pyme."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response(
+                {"error": "user_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        pyme.employees.add(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request, id, *args, **kwargs):
+        try:
+            pyme = Pyme.objects.get(id=id)
+        except Pyme.DoesNotExist:
+            return Response(
+                {"error": "Pyme not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if pyme.owner != request.user:
+            return Response(
+                {"error": "You do not have permission to access this pyme."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response(
+                {"error": "user_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        pyme.employees.remove(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
