@@ -17,6 +17,7 @@ def get_code_expiry():
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number =models.IntegerField(blank=True,null=True)
+    email=models.EmailField(unique=True,editable=False)
     profile_pic = models.TextField(blank=True)
     is_admin = models.BooleanField(default=False)
     is_mod = models.BooleanField(default=False)
