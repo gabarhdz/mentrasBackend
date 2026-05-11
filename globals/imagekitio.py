@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
@@ -71,13 +72,18 @@ def _get_upload_timeout():
 
 
 def get_upload_authentication():
-    public_key = os.environ.get("IMAGEKIT_PUBLIC_KEY")
+    public_key = os.getenv("IMAGEKIT_PUBLIC_KEY")
     if not public_key:
         raise ValueError("IMAGEKIT_PUBLIC_KEY is not configured")
 
+    expires_in_seconds = int(
+        os.environ.get("IMAGEKIT_AUTH_EXPIRE_SECONDS", DEFAULT_IMAGEKIT_AUTH_EXPIRE_SECONDS)
+    )
+    expire_at = int(time.time()) + expires_in_seconds
+
     return {
         **imagekit.helper.get_authentication_parameters(
-            expire=int(os.environ.get("IMAGEKIT_AUTH_EXPIRE_SECONDS", DEFAULT_IMAGEKIT_AUTH_EXPIRE_SECONDS))
+            expire=expire_at
         ),
         "publicKey": public_key,
         "urlEndpoint": os.environ.get("IMAGEKIT_URL_ENDPOINT", ""),

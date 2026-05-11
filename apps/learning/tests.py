@@ -9,7 +9,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from globals.imagekitio import upload_video
+from globals.imagekitio import get_upload_authentication, upload_video
 
 from .models import Course, Lesson, Unit
 from .serializers import LessonSerializer
@@ -133,7 +133,130 @@ class LearningLessonUploadTests(APITestCase):
         self.assertEqual(response.data["publicKey"], "public_test_key")
 
 
+class LearningCourseVisibilityTests(APITestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.mentor = user_model.objects.create_user(
+            username="mentor-owner",
+            email="mentor-owner@example.com",
+            password="StrongPass123",
+            is_mentor=True,
+            is_email_verified=True,
+        )
+        self.other_mentor = user_model.objects.create_user(
+            username="mentor-second",
+            email="mentor-second@example.com",
+            password="StrongPass123",
+            is_mentor=True,
+            is_email_verified=True,
+        )
+        self.student = user_model.objects.create_user(
+            username="studentuser",
+            email="student@example.com",
+            password="StrongPass123",
+            is_mentor=False,
+            is_email_verified=True,
+        )
+        self.first_course = Course.objects.create(
+            name="Curso del mentor uno",
+            description="Descripcion uno",
+            author=self.mentor,
+        )
+        self.second_course = Course.objects.create(
+            name="Curso del mentor dos",
+            description="Descripcion dos",
+            author=self.other_mentor,
+        )
+
+    def test_verified_non_mentor_can_list_all_courses(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(reverse("learning-courses"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        course_names = {course["name"] for course in response.data}
+        self.assertEqual(course_names, {"Curso del mentor uno", "Curso del mentor dos"})
+
+    def test_mentor_can_list_courses_created_by_other_mentors(self):
+        self.client.force_authenticate(user=self.mentor)
+
+        response = self.client.get(reverse("learning-courses"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_authors = {course["author"] for course in response.data}
+        self.assertEqual(
+            returned_authors,
+            {str(self.mentor.id), str(self.other_mentor.id)},
+        )
+
+    def test_verified_non_mentor_can_open_course_detail(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(
+            reverse("learning-course-detail", args=[self.first_course.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(self.first_course.id))
+        self.assertEqual(response.data["name"], "Curso del mentor uno")
+
+    def test_mentor_can_open_course_detail_created_by_another_mentor(self):
+        self.client.force_authenticate(user=self.mentor)
+
+        response = self.client.get(
+            reverse("learning-course-detail", args=[self.second_course.id])
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(self.second_course.id))
+
+    def test_non_mentor_cannot_create_course(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(
+            reverse("learning-courses"),
+            {
+                "name": "Curso bloqueado",
+                "description": "No deberia crearse",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Course.objects.filter(name="Curso bloqueado").exists())
+
+
 class ImageKitUploadHelperTests(APITestCase):
+    @patch.dict(
+        "os.environ",
+        {
+            "IMAGEKIT_PUBLIC_KEY": "public_test_key",
+            "IMAGEKIT_URL_ENDPOINT": "https://ik.imagekit.io/demo",
+            "IMAGEKIT_AUTH_EXPIRE_SECONDS": "1800",
+        },
+        clear=False,
+    )
+    @patch("globals.imagekitio.imagekit.helper.get_authentication_parameters")
+    @patch("globals.imagekitio.time.time", return_value=1_700_000_000)
+    def test_get_upload_authentication_uses_future_unix_timestamp(
+        self,
+        mock_time,
+        mock_get_authentication_parameters,
+    ):
+        mock_get_authentication_parameters.return_value = {
+            "token": "upload-token",
+            "expire": 1_700_001_800,
+            "signature": "signed",
+        }
+
+        auth = get_upload_authentication()
+
+        mock_get_authentication_parameters.assert_called_once_with(expire=1_700_001_800)
+        self.assertEqual(auth["expire"], 1_700_001_800)
+        self.assertEqual(auth["publicKey"], "public_test_key")
+        self.assertEqual(auth["urlEndpoint"], "https://ik.imagekit.io/demo")
+
     @patch("globals.imagekitio.imagekit.files.upload")
     def test_upload_video_uses_temporary_path_and_removes_it_after_success(self, mock_upload):
         file = build_test_video("cleanup.mp4")

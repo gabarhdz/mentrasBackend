@@ -32,11 +32,16 @@ class LearningUploadAuth(APIView):
 
 
 class MentorCourseListCreate(APIView):
-    permission_classes = [IsAuthenticated, IsEmailVerified, IsMentor]
+    permission_classes = [IsAuthenticated, IsEmailVerified]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsEmailVerified(), IsMentor()]
+        return [permission() for permission in self.permission_classes]
 
     def get(self, request, *args, **kwargs):
         courses = (
-            Course.objects.filter(author=request.user)
+            Course.objects.all()
             .prefetch_related(UNIT_PREFETCH)
             .order_by("-created_at")
         )
@@ -55,9 +60,14 @@ class MentorCourseListCreate(APIView):
 
 
 class MentorCourseDetail(APIView):
-    permission_classes = [IsAuthenticated, IsEmailVerified, IsMentor]
+    permission_classes = [IsAuthenticated, IsEmailVerified]
 
-    def get_object(self, request, id):
+    def get_permissions(self):
+        if self.request.method in {"PATCH", "DELETE"}:
+            return [IsAuthenticated(), IsEmailVerified(), IsMentor()]
+        return [permission() for permission in self.permission_classes]
+
+    def get_object(self, request, id, require_owner=False):
         try:
             course = (
                 Course.objects.select_related("author")
@@ -67,7 +77,7 @@ class MentorCourseDetail(APIView):
         except Course.DoesNotExist:
             return None, Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if course.author != request.user:
+        if require_owner and course.author != request.user:
             return None, Response(
                 {"error": "You do not have permission to access this course."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -76,7 +86,7 @@ class MentorCourseDetail(APIView):
         return course, None
 
     def get(self, request, id, *args, **kwargs):
-        course, error_response = self.get_object(request, id)
+        course, error_response = self.get_object(request, id, require_owner=False)
         if error_response:
             return error_response
 
@@ -84,7 +94,7 @@ class MentorCourseDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, id, *args, **kwargs):
-        course, error_response = self.get_object(request, id)
+        course, error_response = self.get_object(request, id, require_owner=True)
         if error_response:
             return error_response
 
@@ -103,7 +113,7 @@ class MentorCourseDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id, *args, **kwargs):
-        course, error_response = self.get_object(request, id)
+        course, error_response = self.get_object(request, id, require_owner=True)
         if error_response:
             return error_response
 
