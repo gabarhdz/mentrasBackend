@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    LearningUploadAuth,
     MentorCourseDetail,
     MentorCourseListCreate,
     MentorLessonDetail,
@@ -11,6 +12,7 @@ from .views import (
 
 
 urlpatterns = [
+    path("uploads/auth/", LearningUploadAuth.as_view(), name="learning-upload-auth"),
     path("courses/", MentorCourseListCreate.as_view(), name="learning-courses"),
     path("courses/<uuid:id>/", MentorCourseDetail.as_view(), name="learning-course-detail"),
     path(

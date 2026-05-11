@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from globals.imagekitio import get_upload_authentication
 from globals.permissions import IsEmailVerified, IsMentor
 
 from .models import Course, Lesson, Unit
@@ -18,6 +19,16 @@ UNIT_PREFETCH = Prefetch(
     "unit_set",
     queryset=Unit.objects.prefetch_related(LESSON_PREFETCH).order_by("created_at"),
 )
+
+
+class LearningUploadAuth(APIView):
+    permission_classes = [IsAuthenticated, IsEmailVerified, IsMentor]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return Response(get_upload_authentication(), status=status.HTTP_200_OK)
+        except ValueError as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class MentorCourseListCreate(APIView):
@@ -131,9 +142,7 @@ class MentorUnitListCreate(APIView):
         if error_response:
             return error_response
 
-        payload = request.data.copy()
-        payload["course_id"] = str(course.id)
-        serializer = UnitSerializer(data=payload, context={"request": request})
+        serializer = UnitSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             unit = serializer.save(course=course)
             return Response(
@@ -227,9 +236,7 @@ class MentorLessonListCreate(APIView):
         if error_response:
             return error_response
 
-        payload = request.data.copy()
-        payload["unit_id"] = str(unit.id)
-        serializer = LessonSerializer(data=payload, context={"request": request})
+        serializer = LessonSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             lesson = serializer.save(unit=unit)
             return Response(

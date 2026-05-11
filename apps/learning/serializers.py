@@ -86,6 +86,8 @@ class LessonSerializer(serializers.ModelSerializer):
     )
     video_file = serializers.FileField(required=False, write_only=True, allow_null=True)
     pdf_file = serializers.FileField(required=False, write_only=True, allow_null=True)
+    video_url = serializers.URLField(required=False, write_only=True, allow_null=True)
+    pdf_url = serializers.URLField(required=False, write_only=True, allow_null=True)
 
     class Meta:
         model = Lesson
@@ -99,9 +101,37 @@ class LessonSerializer(serializers.ModelSerializer):
             "pdf",
             "video_file",
             "pdf_file",
+            "video_url",
+            "pdf_url",
             "created_at",
         ]
         read_only_fields = ["id", "unit", "video", "pdf", "created_at"]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        # Some clients send uploaded files using the model field names (`video`, `pdf`)
+        # instead of the write-only upload fields (`video_file`, `pdf_file`).
+        video_alias = self.initial_data.get("video")
+        pdf_alias = self.initial_data.get("pdf")
+
+        if "video_file" not in attrs and hasattr(video_alias, "read"):
+            attrs["video_file"] = video_alias
+        elif "video_url" not in attrs and isinstance(video_alias, str) and video_alias.strip():
+            attrs["video_url"] = video_alias.strip()
+
+        if "pdf_file" not in attrs and hasattr(pdf_alias, "read"):
+            attrs["pdf_file"] = pdf_alias
+        elif "pdf_url" not in attrs and isinstance(pdf_alias, str) and pdf_alias.strip():
+            attrs["pdf_url"] = pdf_alias.strip()
+
+        if attrs.get("video_file") and attrs.get("video_url"):
+            raise serializers.ValidationError({"video_file": "Send either video_file or video_url, not both."})
+
+        if attrs.get("pdf_file") and attrs.get("pdf_url"):
+            raise serializers.ValidationError({"pdf_file": "Send either pdf_file or pdf_url, not both."})
+
+        return attrs
 
     def _validate_extension(self, uploaded_file, allowed_extensions, field_name):
         suffix = Path(uploaded_file.name).suffix.lower()
@@ -110,10 +140,22 @@ class LessonSerializer(serializers.ModelSerializer):
                 {field_name: f"Unsupported file type. Allowed types: {', '.join(sorted(allowed_extensions))}."}
             )
 
-    def _upload_lesson_media(self, instance, video_file=None, pdf_file=None, *, overwrite=False):
+    def _upload_lesson_media(
+        self,
+        instance,
+        video_file=None,
+        pdf_file=None,
+        video_url=None,
+        pdf_url=None,
+        *,
+        overwrite=False,
+    ):
         updates = []
 
-        if video_file:
+        if video_url:
+            instance.video = video_url
+            updates.append("video")
+        elif video_file:
             self._validate_extension(video_file, ALLOWED_VIDEO_EXTENSIONS, "video_file")
             video_url = upload_video(
                 video_file,
@@ -126,7 +168,10 @@ class LessonSerializer(serializers.ModelSerializer):
             instance.video = video_url
             updates.append("video")
 
-        if pdf_file:
+        if pdf_url:
+            instance.pdf = pdf_url
+            updates.append("pdf")
+        elif pdf_file:
             self._validate_extension(pdf_file, ALLOWED_PDF_EXTENSIONS, "pdf_file")
             pdf_url = upload_document(
                 pdf_file,
@@ -147,15 +192,33 @@ class LessonSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         video_file = validated_data.pop("video_file", None)
         pdf_file = validated_data.pop("pdf_file", None)
+        video_url = validated_data.pop("video_url", None)
+        pdf_url = validated_data.pop("pdf_url", None)
         lesson = Lesson.objects.create(**validated_data)
-        return self._upload_lesson_media(lesson, video_file, pdf_file, overwrite=False)
+        return self._upload_lesson_media(
+            lesson,
+            video_file,
+            pdf_file,
+            video_url,
+            pdf_url,
+            overwrite=False,
+        )
 
     def update(self, instance, validated_data):
         video_file = validated_data.pop("video_file", None)
         pdf_file = validated_data.pop("pdf_file", None)
+        video_url = validated_data.pop("video_url", None)
+        pdf_url = validated_data.pop("pdf_url", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
-        return self._upload_lesson_media(instance, video_file, pdf_file, overwrite=True)
+        return self._upload_lesson_media(
+            instance,
+            video_file,
+            pdf_file,
+            video_url,
+            pdf_url,
+            overwrite=True,
+        )
