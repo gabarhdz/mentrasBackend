@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 import uuid
-from globals.imagekitio import upload_video
 # Create your models here.
 
 class Course(models.Model):
@@ -36,6 +35,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=255)
     video = models.URLField(max_length=500, blank=True)
     pdf = models.URLField(max_length=500, blank=True)
+    content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.title

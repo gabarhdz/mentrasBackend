@@ -9,5 +9,6 @@ urlpatterns = [
     path('api/forum/', include('apps.forum.urls')),
     path('api/stock/', include('apps.stock.urls')),
     path('api/pyme/', include('apps.pyme.urls')),
+    path('api/learning/', include('apps.learning.urls')),
     path('api/accounts/', include('allauth.urls'))
 ]
