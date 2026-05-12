@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.forum.apps.ForumConfig',
     'apps.stock.apps.StockConfig',
     'apps.pyme.apps.PymeConfig',
+    'apps.tools.apps.ToolsConfig',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
