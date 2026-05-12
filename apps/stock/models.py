@@ -26,7 +26,7 @@ class Menu(models.Model):
         related_name="menus",
         default=None,
         null=True,
-        blank=True,
+        blank=False,
     )
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -92,5 +92,4 @@ class MenuMovement(models.Model):
 
     def __str__(self):
         return f"{self.menu.name} - {self.get_action_display()}"
-
 

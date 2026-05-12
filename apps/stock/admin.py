@@ -10,7 +10,8 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(Menu)
 class MenuAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "pyme")
+    list_select_related = ("pyme",)
 
 
 @admin.register(MenuItem)

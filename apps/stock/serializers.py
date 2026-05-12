@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.pyme.models import Pyme
 from apps.stock.models import Item, Menu, MenuItem, MenuMovement
 from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
@@ -133,9 +134,35 @@ class MenuMovementSerializer(serializers.ModelSerializer):
 
 class MenuSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
+    pyme = serializers.UUIDField(source="pyme.id", read_only=True)
+    pyme_id = serializers.PrimaryKeyRelatedField(
+        queryset=Pyme.objects.all(),
+        source="pyme",
+        write_only=True,
+        required=True,
+        allow_null=False,
+    )
     menu_items = MenuItemSerializer(many=True, read_only=True)
     movements = MenuMovementSerializer(many=True, read_only=True)
 
+    def validate(self, attrs):
+        request = self.context.get("request")
+        pyme = attrs.get("pyme")
+
+        if not request or not request.user.is_authenticated or not pyme:
+            return attrs
+
+        if pyme.owner_id != request.user.id:
+            raise serializers.ValidationError(
+                {"pyme_id": "Solo puedes crear menus para pymes de tu cuenta."}
+            )
+
+        return attrs
+
     class Meta:
         model = Menu
-        fields = ["id", "name", "description", "menu_items", "movements"]
+        fields = ["id", "pyme", "pyme_id", "name", "description", "menu_items", "movements"]
+        extra_kwargs = {
+            "name": {"required": True, "allow_blank": False},
+            "description": {"required": True, "allow_blank": False},
+        }

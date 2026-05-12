@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import F
@@ -35,36 +36,39 @@ class SpecItem(APIView):
 class AllMenus(APIView):
     permission_classes = [IsEmailVerified]
     def get(self, request):
-        menus = Menu.objects.all()
-        serializer = MenuSerializer(menus, many=True)
+        menus = Menu.objects.filter(pyme__owner=request.user).select_related("pyme")
+        serializer = MenuSerializer(menus, many=True, context={"request": request})
         return Response(serializer.data)
     
     def post(self, request):
-        serializer = MenuSerializer(data=request.data)
+        if not request.user.is_pyme_owner:
+            return Response({"error": "Your account is not allowed to create menus."}, status=403)
+
+        serializer = MenuSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             menu = serializer.save()
-            return Response(MenuSerializer(menu).data, status=201)
+            return Response(MenuSerializer(menu, context={"request": request}).data, status=201)
         return Response(serializer.errors, status=400)
     
 class SpecMenu(APIView):
     permission_classes = [IsEmailVerified]
     def get(self, request, menu_id):
-        try:
-            menu = Menu.objects.get(id=menu_id)
-        except Menu.DoesNotExist:
-            return Response({"error": "Menu not found"}, status=404)
-
-        serializer = MenuSerializer(menu)
+        menu = get_object_or_404(
+            Menu.objects.select_related("pyme"),
+            id=menu_id,
+            pyme__owner=request.user,
+        )
+        serializer = MenuSerializer(menu, context={"request": request})
         return Response(serializer.data)
 
 class ItemsMenu(APIView):
     permission_classes = [IsEmailVerified]
     def post(self, request, menu_id):
-        try:
-            menu = Menu.objects.get(id=menu_id)
-            
-        except Menu.DoesNotExist:
-            return Response({"error": "Menu not found"}, status=404)
+        menu = get_object_or_404(
+            Menu.objects.select_related("pyme"),
+            id=menu_id,
+            pyme__owner=request.user,
+        )
 
         payload = request.data.copy()
         payload["menu"] = menu.id
@@ -92,16 +96,17 @@ class ItemsMenu(APIView):
                     details=f"Added {item.name} to {menu.name}",
                 )
 
-            return Response(MenuSerializer(menu).data, status=200)
+            return Response(MenuSerializer(menu, context={"request": request}).data, status=200)
         return Response(serializer.errors, status=400)
 
 class MenuMovements(APIView):
     permission_classes = [IsEmailVerified]
     def get(self, request, menu_id):
-        try:
-            menu = Menu.objects.get(id=menu_id)
-        except Menu.DoesNotExist:
-            return Response({"error": "Menu not found"}, status=404)
+        menu = get_object_or_404(
+            Menu.objects.select_related("pyme"),
+            id=menu_id,
+            pyme__owner=request.user,
+        )
 
         movements = MenuMovement.objects.filter(menu=menu)
         serializer = MenuMovementSerializer(movements, many=True)
