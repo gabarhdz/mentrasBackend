@@ -42,6 +42,14 @@ class ToolsMetricsSignalsTests(TestCase):
             pyme=self.pyme,
         )
 
+    def test_product_creation_generates_most_seen_metric_automatically(self):
+        most_seen_product = MostSeenProducts.objects.get(
+            pyme=self.pyme,
+            product_name=self.product.name,
+        )
+
+        self.assertEqual(most_seen_product.views, 0)
+
     def test_order_creation_refreshes_sales_metrics_automatically(self):
         order_date = timezone.make_aware(datetime(2026, 5, 10, 14, 30, 0))
 
@@ -68,6 +76,32 @@ class ToolsMetricsSignalsTests(TestCase):
         self.assertEqual(most_sold_product.profit, 45.0)
         self.assertEqual(most_sold_category.quantity_sold, 3)
         self.assertEqual(most_sold_category.profit, 45.0)
+
+    def test_updating_pyme_category_refreshes_category_metric_automatically(self):
+        Order.objects.create(
+            product=self.product,
+            quantity=1,
+            total_price="15.00",
+            customer=self.customer,
+            created_at=timezone.make_aware(datetime(2026, 5, 10, 14, 30, 0)),
+        )
+        new_category = Category.objects.create(name="Cafeteria")
+
+        self.pyme.category = new_category
+        self.pyme.save(update_fields=["category"])
+
+        self.assertFalse(
+            MostSoldCategories.objects.filter(
+                pyme=self.pyme,
+                category_name="Servicios",
+            ).exists()
+        )
+        refreshed_metric = MostSoldCategories.objects.get(
+            pyme=self.pyme,
+            category_name="Cafeteria",
+        )
+        self.assertEqual(refreshed_metric.quantity_sold, 1)
+        self.assertEqual(refreshed_metric.profit, 15.0)
 
 
 class ToolsMetricsViewsTests(APITestCase):

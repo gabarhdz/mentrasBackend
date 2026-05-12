@@ -3,7 +3,12 @@ from django.dispatch import receiver
 
 from apps.pyme.models import Order, Product, ProductOrder, Pyme
 
-from .services import refresh_sales_metrics_for_pyme, refresh_view_metrics_for_pyme, sync_product_view_metric
+from .services import refresh_pyme_metrics, refresh_sales_metrics_for_pyme, refresh_view_metrics_for_pyme, sync_product_view_metric
+
+
+@receiver(post_save, sender=Pyme)
+def sync_pyme_metrics(sender, instance, **kwargs):
+    refresh_pyme_metrics(instance)
 
 
 @receiver(pre_save, sender=Product)
@@ -22,12 +27,14 @@ def sync_product_metrics(sender, instance, update_fields=None, **kwargs):
         sync_product_view_metric(instance)
         return
 
+    refresh_sales_metrics_for_pyme(instance.pyme)
     refresh_view_metrics_for_pyme(instance.pyme)
     _refresh_previous_pyme_metrics(getattr(instance, "_previous_pyme_id", None), instance.pyme_id)
 
 
 @receiver(post_delete, sender=Product)
 def sync_deleted_product_metrics(sender, instance, **kwargs):
+    refresh_sales_metrics_for_pyme(instance.pyme)
     refresh_view_metrics_for_pyme(instance.pyme)
 
 

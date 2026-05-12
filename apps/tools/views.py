@@ -8,7 +8,6 @@ from apps.pyme.models import Pyme
 
 from .models import MonthlySales, MostSeenProducts, MostSoldCategories, MostSoldProducts
 from .serializers import PymeMetricsSerializer
-from .services import ensure_pyme_metrics, refresh_pyme_metrics
 
 
 class PymeMetricsView(APIView):
@@ -35,11 +34,6 @@ class PymeMetricsView(APIView):
         pyme, error_response = self.get_object(request, pyme_id)
         if error_response:
             return error_response
-
-        if request.query_params.get("refresh") == "true":
-            refresh_pyme_metrics(pyme)
-        else:
-            ensure_pyme_metrics(pyme)
 
         serializer = PymeMetricsSerializer(
             {

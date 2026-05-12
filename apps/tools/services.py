@@ -134,17 +134,6 @@ def sync_product_view_metric(product: Product) -> None:
         )
 
 
-def ensure_pyme_metrics(pyme: Pyme) -> None:
-    has_any_metric = (
-        MonthlySales.objects.filter(pyme=pyme).exists()
-        or MostSoldProducts.objects.filter(pyme=pyme).exists()
-        or MostSeenProducts.objects.filter(pyme=pyme).exists()
-        or MostSoldCategories.objects.filter(pyme=pyme).exists()
-    )
-    if not has_any_metric:
-        refresh_pyme_metrics(pyme)
-
-
 def _accumulate_sale_line(
     *,
     monthly_sales,
