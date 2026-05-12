@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
-from .models import Category, Pyme
+from .models import Category, Product, Pyme
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -77,3 +77,38 @@ class PymeSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
+    pyme = serializers.UUIDField(source="pyme.id", read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "name",
+            "description",
+            "images",
+            "price",
+            "pyme",
+            "get_requests_count",
+            "get_requests_count_reset_at",
+        ]
+        read_only_fields = [
+            "id",
+            "pyme",
+            "get_requests_count",
+            "get_requests_count_reset_at",
+        ]
+
+
+class PymeDetailSerializer(PymeSerializer):
+    products = serializers.SerializerMethodField()
+
+    class Meta(PymeSerializer.Meta):
+        fields = PymeSerializer.Meta.fields + ["products"]
+
+    def get_products(self, obj):
+        products = obj.product_set.all().order_by("-get_requests_count", "name")
+        return ProductSerializer(products, many=True, context=self.context).data

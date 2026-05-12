@@ -1,11 +1,15 @@
+from datetime import timedelta
+
+from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
 
-from .models import Pyme
-from .serializers import PymeSerializer
+from .models import Product, Pyme
+from .serializers import ProductSerializer, PymeDetailSerializer, PymeSerializer
 
 
 class AccountPymes(APIView):
@@ -67,7 +71,7 @@ class PymeDetail(APIView):
         if error_response:
             return error_response
 
-        serializer = PymeSerializer(pyme, context={"request": request})
+        serializer = PymeDetailSerializer(pyme, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, id, *args, **kwargs):
@@ -96,3 +100,52 @@ class PymeDetail(APIView):
 
         pyme.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductDetail(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get_object(self, request, id):
+        try:
+            product = (
+                Product.objects.select_related("pyme", "pyme__owner")
+                .get(id=id)
+            )
+        except Product.DoesNotExist:
+            return None, Response(
+                {"error": "Product not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if product.pyme.owner != request.user:
+            return None, Response(
+                {"error": "You do not have permission to access this product."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return product, None
+
+    def get(self, request, id, *args, **kwargs):
+        product, error_response = self.get_object(request, id)
+        if error_response:
+            return error_response
+
+        now = timezone.now()
+        reset_threshold = now - timedelta(days=30)
+
+        with transaction.atomic():
+            tracked_product = Product.objects.select_for_update().get(id=product.id)
+            if tracked_product.get_requests_count_reset_at <= reset_threshold:
+                tracked_product.get_requests_count = 0
+                tracked_product.get_requests_count_reset_at = now
+
+            tracked_product.get_requests_count += 1
+            tracked_product.save(
+                update_fields=[
+                    "get_requests_count",
+                    "get_requests_count_reset_at",
+                ]
+            )
+
+        serializer = ProductSerializer(tracked_product, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

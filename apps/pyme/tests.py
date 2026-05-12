@@ -1,11 +1,13 @@
+from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from unittest.mock import patch
 
-from .models import Category, Pyme
+from .models import Category, Product, Pyme
 from .serializers import PymeSerializer
 
 
@@ -74,6 +76,12 @@ class PymeViewsTests(APITestCase):
             profile_pic="https://example.com/existing.png",
             foundation_date="2022-06-10",
         )
+        self.product = Product.objects.create(
+            name="Cafe frio",
+            description="Botella de cold brew",
+            price="12.50",
+            pyme=self.pyme,
+        )
 
     def test_get_only_returns_authenticated_user_pymes(self):
         Pyme.objects.create(
@@ -130,3 +138,53 @@ class PymeViewsTests(APITestCase):
         self.pyme.refresh_from_db()
         self.assertEqual(self.pyme.description, "Descripcion actualizada")
         self.assertEqual(self.pyme.name, "Mentras Shop")
+
+    def test_pyme_detail_returns_products_sorted_by_get_request_count(self):
+        self.client.force_authenticate(user=self.owner)
+        top_product = Product.objects.create(
+            name="Blend premium",
+            description="Cafe de origen unico",
+            price="18.00",
+            pyme=self.pyme,
+            get_requests_count=7,
+        )
+
+        response = self.client.get(reverse("pyme-detail", args=[self.pyme.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = [product["id"] for product in response.data["products"]]
+        self.assertEqual(returned_ids[0], str(top_product.id))
+        self.assertIn(str(self.product.id), returned_ids)
+
+    def test_product_detail_increments_get_request_counter(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.get(reverse("product-detail", args=[self.product.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.get_requests_count, 1)
+        self.assertEqual(response.data["get_requests_count"], 1)
+
+    def test_product_detail_resets_counter_after_thirty_days(self):
+        self.client.force_authenticate(user=self.owner)
+        self.product.get_requests_count = 14
+        self.product.get_requests_count_reset_at = timezone.now() - timedelta(days=31)
+        self.product.save(update_fields=["get_requests_count", "get_requests_count_reset_at"])
+
+        response = self.client.get(reverse("product-detail", args=[self.product.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.get_requests_count, 1)
+        self.assertGreater(
+            self.product.get_requests_count_reset_at,
+            timezone.now() - timedelta(minutes=1),
+        )
+
+    def test_product_detail_blocks_non_owner(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.get(reverse("product-detail", args=[self.product.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

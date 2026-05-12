@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from uuid import uuid4
 import json
 
@@ -50,6 +51,8 @@ class Product(models.Model):
     images = models.TextField(blank=False, default="[]", validators=[validate_post_images])
     price = models.DecimalField(max_digits=10, decimal_places=2)
     pyme = models.ForeignKey(Pyme, on_delete=models.CASCADE)
+    get_requests_count = models.PositiveIntegerField(default=0)
+    get_requests_count_reset_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
