@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.user.apps.UserConfig',
     'apps.forum.apps.ForumConfig',
     'apps.stock.apps.StockConfig',
+    'apps.learning.apps.LearningConfig',
     'apps.pyme.apps.PymeConfig',
     'apps.tools.apps.ToolsConfig',
     'rest_framework',
