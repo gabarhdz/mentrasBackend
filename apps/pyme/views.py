@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
 
-from .models import Pyme
-from .serializers import PymeSerializer
+from .models import Category, Pyme
+from .serializers import CategorySerializer, PymeSerializer
 
 
 class AccountPymes(APIView):
@@ -39,6 +39,15 @@ class MyPymes(APIView):
     def get(self, request, *args, **kwargs):
         pymes = Pyme.objects.filter(owner=request.user).order_by("-access_date")
         serializer = PymeSerializer(pymes, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CategoryList(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.order_by("name")
+        serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
