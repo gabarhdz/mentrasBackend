@@ -20,6 +20,14 @@ class Item(models.Model):
 
 class Menu(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pyme = models.ForeignKey(
+        "pyme.Pyme",
+        on_delete=models.CASCADE,
+        related_name="menus",
+        default=None,
+        null=True,
+        blank=True,
+    )
     name = models.CharField(max_length=255)
     description = models.TextField()
 
