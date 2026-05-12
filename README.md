@@ -14,6 +14,7 @@ Current implemented domains:
 - `Forums`: public forum discovery, forum creation, image-backed forum profiles, posting, and moderation-friendly validation.
 - `Inventory and menus`: item registration, menu creation, menu-item assignment, stock deduction, and movement history.
 - `PyME management`: creation and maintenance of SME profiles linked to verified owner accounts.
+- `Learning`: mentor-scoped course, unit, and lesson management with video/PDF uploads through ImageKit.
 
 There is also data-model groundwork for a future commerce layer through `Product`, `Order`, and `ProductOrder` models in the `pyme` app.
 
@@ -80,8 +81,9 @@ mentrasBackend/
 │   ├── user/    # auth, profiles, email verification, Google login
 │   ├── forum/   # forums, posts, moderation, forum membership/admin links
 │   ├── stock/   # items, menus, stock deduction, movement logs
-│   └── pyme/    # SME profiles and future commerce groundwork
-├── globals/     # shared helpers for permissions, tokens, Cloudinary
+│   ├── pyme/    # SME profiles and future commerce groundwork
+│   └── learning/ # mentor courses, units, lessons, and media uploads
+├── globals/     # shared helpers for permissions, tokens, media uploads
 ├── mentrasBackend/
 │   ├── settings.py
 │   └── urls.py
@@ -857,6 +859,7 @@ These are the kinds of implementation details that matter in a technical review:
 - `dj-rest-auth`
 - `django-allauth`
 - `Cloudinary`
+- `ImageKit`
 - `Google OAuth`
 - `better-profanity`
 
@@ -891,6 +894,7 @@ GOOGLE_APP_PASSWORD=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+IMAGEKIT_PRIVATE_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_SECRET=
 FACEBOOK_CLIENT_ID=

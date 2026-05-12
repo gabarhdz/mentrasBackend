@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'apps.stock.apps.StockConfig',
     'apps.learning.apps.LearningConfig',
     'apps.pyme.apps.PymeConfig',
-    'apps.tools.apps.ToolsConfig',
+    'apps.learning.apps.LearningConfig',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',

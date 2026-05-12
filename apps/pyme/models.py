@@ -37,6 +37,7 @@ class Pyme(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    employees = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="employed_pymes", blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     profile_pic = models.TextField(blank=True)
     access_date = models.DateTimeField(auto_now_add=True)

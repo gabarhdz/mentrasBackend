@@ -17,6 +17,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class PymeSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     owner = serializers.UUIDField(source="owner.id", read_only=True)
+    employees = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
@@ -39,6 +40,7 @@ class PymeSerializer(serializers.ModelSerializer):
             "profile_pic",
             "access_date",
             "foundation_date",
+            "employees",
         ]
         read_only_fields = ["id", "owner", "access_date", "category"]
         extra_kwargs = {
