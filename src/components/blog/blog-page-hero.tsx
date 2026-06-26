@@ -1,4 +1,4 @@
-import { BookOpenText, ImagePlus, MessageSquareMore } from 'lucide-react'
+import { BookOpenText, Globe2, ImagePlus, LockKeyhole, MessageSquareMore, Sparkles } from 'lucide-react'
 
 import type { ForumRecord } from '@/components/blog/blog-types'
 import { SectionHeading } from '@/components/ui/section-heading'
@@ -10,12 +10,33 @@ type BlogPageHeroProps = {
   visualPostCount: number
 }
 
+const formatForumDate = (value: string) => {
+  if (!value) {
+    return 'Disponible para nuevas conversaciones'
+  }
+
+  const parsedDate = new Date(value)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'Disponible para nuevas conversaciones'
+  }
+
+  return new Intl.DateTimeFormat('es-CR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(parsedDate)
+}
+
 export function BlogPageHero({
   activeForum,
   forumCount,
   postCount,
   visualPostCount,
 }: BlogPageHeroProps) {
+  const forumProfileImage = activeForum?.profilePic?.trim() ?? ''
+  const hasForumImage = forumProfileImage.length > 0
+  const forumCreatedLabel = formatForumDate(activeForum?.createdAt ?? '')
   const stats = [
     {
       label: 'Foros visibles',
@@ -36,46 +57,121 @@ export function BlogPageHero({
 
   return (
     <section className="rounded-[2rem] border border-border/70 bg-linear-to-br from-background via-card to-primary/8 p-6 shadow-sm sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-        <SectionHeading
-          badge={activeForum ? `Foro actual: ${activeForum.name}` : 'Foros'}
-          title={activeForum ? activeForum.name : 'Explora las conversaciones de la comunidad'}
-          description={
-            activeForum
-              ? activeForum.description
-              : 'Selecciona un foro para dejar claro el contexto de lectura y publicacion. Cada post mantiene autoria visible y una galeria flexible de hasta cuatro fotos.'
-          }
-        />
-
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
-            <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-              <MessageSquareMore className="size-5" />
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch">
+        <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/95 shadow-sm">
+          {hasForumImage ? (
+            <div className="relative aspect-[16/9] min-h-[250px] w-full">
+              <img
+                src={forumProfileImage}
+                alt={activeForum ? `Imagen principal del foro ${activeForum.name}` : 'Imagen del foro'}
+                className="block h-full w-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-card/76 via-card/10 via-20% to-transparent" />
+              <div className="absolute inset-y-0 left-0 w-[11%] bg-linear-to-r from-background/78 via-background/24 to-transparent sm:w-[8%]" />
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-1 text-xs font-medium text-white/92 backdrop-blur-sm">
+                  <Sparkles className="size-3.5" />
+                  Foto de perfil del foro
+                </div>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-white/88">
+                  {activeForum?.description ??
+                    'Selecciona un foro para dejar claro el contexto de lectura y publicacion.'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm font-medium text-foreground">Foro activo visible</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              La cabecera deja claro donde estas leyendo o publicando en todo momento.
-            </p>
+          ) : (
+            <div className="flex min-h-[250px] flex-col justify-between bg-linear-to-br from-primary/14 via-background to-secondary/16 p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Sparkles className="size-4" />
+                Espacio curado para conversaciones con contexto
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    Foro activo
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">
+                    {activeForum?.name ?? 'Comunidad abierta'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    Enfoque visual
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-foreground">
+                    Usa portada del foro cuando exista. Si no, esta cabecera conserva orientacion y densidad informativa.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-[1.75rem] border border-border/70 bg-background/70 p-5 sm:p-6">
+          <SectionHeading
+            badge={activeForum ? `Foro actual: ${activeForum.name}` : 'Foros'}
+            title={activeForum ? activeForum.name : 'Explora las conversaciones de la comunidad'}
+            description={
+              activeForum
+                ? activeForum.description
+                : 'Selecciona un foro para dejar claro el contexto de lectura y publicacion. Cada post mantiene autoria visible y una galeria flexible de hasta cuatro fotos.'
+            }
+            className="max-w-none space-y-3"
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[1.25rem] border border-border/70 bg-card/90 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                {activeForum?.isPrivate ? (
+                  <LockKeyhole className="size-4 text-primary" />
+                ) : (
+                  <Globe2 className="size-4 text-primary" />
+                )}
+                {activeForum?.isPrivate ? 'Acceso privado' : 'Acceso abierto'}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {activeForum?.isPrivate
+                  ? 'La conversacion ocurre en un espacio mas controlado y orientado a miembros concretos.'
+                  : 'La lectura y participacion se entienden rapido desde la cabecera y el feed principal.'}
+              </p>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-border/70 bg-card/90 p-4">
+              <p className="text-sm font-medium text-foreground">Activo desde</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{forumCreatedLabel}</p>
+            </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
-            <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-              <ImagePlus className="size-5" />
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-[1.5rem] border border-border/70 bg-card/90 p-4">
+              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                <MessageSquareMore className="size-5" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Foro activo visible</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                La cabecera deja claro donde estas leyendo o publicando en todo momento.
+              </p>
             </div>
-            <p className="text-sm font-medium text-foreground">Galeria adaptable</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Las publicaciones pueden ir sin fotos o traer una, dos, tres o cuatro.
-            </p>
-          </div>
 
-          <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
-            <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-              <BookOpenText className="size-5" />
+            <div className="rounded-[1.5rem] border border-border/70 bg-card/90 p-4">
+              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                <ImagePlus className="size-5" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Galeria adaptable</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Las publicaciones pueden ir sin fotos o traer una, dos, tres o cuatro.
+              </p>
             </div>
-            <p className="text-sm font-medium text-foreground">Lectura con estructura</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Directorio de foros, contexto actual y feed conviven en una sola vista clara.
-            </p>
+
+            <div className="rounded-[1.5rem] border border-border/70 bg-card/90 p-4">
+              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                <BookOpenText className="size-5" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Lectura con estructura</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Directorio de foros, contexto actual y feed conviven en una sola vista clara.
+              </p>
+            </div>
           </div>
         </div>
       </div>
