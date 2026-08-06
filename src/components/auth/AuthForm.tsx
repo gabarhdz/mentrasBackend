@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { GoogleLogin } from '@react-oauth/google'
+import { Eye, EyeOff } from 'lucide-react'
 
 import { replaceAuthTokens, setStoredUserId } from '@/lib/auth'
 import { getGoogleOriginError } from '@/lib/google-auth'
@@ -384,11 +385,11 @@ const AuthForm = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 >
-                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
             </div>
@@ -441,11 +442,11 @@ const AuthForm = () => {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground transition-colors hover:text-foreground"
                     onClick={() => setShowConfirmPassword((current) => !current)}
                     aria-label={showConfirmPassword ? 'Ocultar confirmacion de contrasena' : 'Mostrar confirmacion de contrasena'}
                   >
-                    {showConfirmPassword ? 'Ocultar' : 'Mostrar'}
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
               </div>
