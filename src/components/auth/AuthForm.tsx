@@ -15,9 +15,11 @@ const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [profilePic, setProfilePic] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -167,6 +169,8 @@ const AuthForm = () => {
   const toggleForm = () => {
     setFeedback(null)
     setIsLogin(!isLogin)
+    setShowPassword(false)
+    setShowConfirmPassword(false)
   }
 
   useEffect(() => {
@@ -210,6 +214,8 @@ const AuthForm = () => {
     setEmail('')
     setPhoneNumber('')
     setConfirmPassword('')
+    setShowPassword(false)
+    setShowConfirmPassword(false)
     setIsPymeOwner(false)
     clearSelectedFile()
   }
@@ -367,14 +373,24 @@ const AuthForm = () => {
               <label className="block text-sm font-medium text-muted-foreground" htmlFor="password">
                 Contrasena
               </label>
-              <input
-                className="mt-1 w-full rounded-md border border-input bg-background p-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                name="password"
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative mt-1">
+                <input
+                  className="w-full rounded-md border border-input bg-background p-2 pr-20 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  name="password"
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -414,14 +430,24 @@ const AuthForm = () => {
                 <label className="block text-sm font-medium text-muted-foreground" htmlFor="confirm-password">
                   Confirmar contrasena
                 </label>
-                <input
-                  className="mt-1 w-full rounded-md border border-input bg-background p-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  name="confirm-password"
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+                <div className="relative mt-1">
+                  <input
+                    className="w-full rounded-md border border-input bg-background p-2 pr-20 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    name="confirm-password"
+                    id="confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    aria-label={showConfirmPassword ? 'Ocultar confirmacion de contrasena' : 'Mostrar confirmacion de contrasena'}
+                  >
+                    {showConfirmPassword ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
               </div>
 
               <label
