@@ -710,7 +710,7 @@ Lists the authenticated owner's businesses.
       "id": "d51f8b87-0ec7-4e95-b0de-f4d0d0ce649d",
       "name": "Food & Beverage"
     },
-    "profile_pic": "https://res.cloudinary.com/demo/image/upload/pyme_pics/cafe-aurora.jpg",
+    "profile_pic": "https://res.cloudinary.com/<cloud-name>/image/upload/pyme_pics/cafe-aurora.jpg",
     "access_date": "2026-04-28T09:00:00Z",
     "foundation_date": "2020-05-14"
   }
@@ -732,7 +732,7 @@ Returns the same owner-scoped list in a dedicated route.
       "id": "d51f8b87-0ec7-4e95-b0de-f4d0d0ce649d",
       "name": "Food & Beverage"
     },
-    "profile_pic": "https://res.cloudinary.com/demo/image/upload/pyme_pics/cafe-aurora.jpg",
+    "profile_pic": "https://res.cloudinary.com/<cloud-name>/image/upload/pyme_pics/cafe-aurora.jpg",
     "access_date": "2026-04-28T09:00:00Z",
     "foundation_date": "2020-05-14"
   }
@@ -767,7 +767,7 @@ Response:
     "id": "d51f8b87-0ec7-4e95-b0de-f4d0d0ce649d",
     "name": "Food & Beverage"
   },
-  "profile_pic": "https://res.cloudinary.com/demo/image/upload/pyme_pics/cafe-aurora.jpg",
+  "profile_pic": "https://res.cloudinary.com/<cloud-name>/image/upload/pyme_pics/cafe-aurora.jpg",
   "access_date": "2026-04-28T09:00:00Z",
   "foundation_date": "2020-05-14"
 }
@@ -787,7 +787,7 @@ Returns one owner-controlled business.
     "id": "d51f8b87-0ec7-4e95-b0de-f4d0d0ce649d",
     "name": "Food & Beverage"
   },
-  "profile_pic": "https://res.cloudinary.com/demo/image/upload/pyme_pics/cafe-aurora.jpg",
+  "profile_pic": "https://res.cloudinary.com/<cloud-name>/image/upload/pyme_pics/cafe-aurora.jpg",
   "access_date": "2026-04-28T09:00:00Z",
   "foundation_date": "2020-05-14"
 }
@@ -818,7 +818,7 @@ Response:
     "id": "d51f8b87-0ec7-4e95-b0de-f4d0d0ce649d",
     "name": "Food & Beverage"
   },
-  "profile_pic": "https://res.cloudinary.com/demo/image/upload/pyme_pics/cafe-aurora.jpg",
+  "profile_pic": "https://res.cloudinary.com/<cloud-name>/image/upload/pyme_pics/cafe-aurora.jpg",
   "access_date": "2026-04-28T09:00:00Z",
   "foundation_date": "2020-05-20"
 }
