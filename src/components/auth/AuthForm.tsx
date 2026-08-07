@@ -329,7 +329,7 @@ const AuthForm = () => {
         {isLogin ? 'Inicia sesion en Mentras' : 'Crea tu cuenta en Mentras'}
       </h2>
 
-      <form method="post" action="#" className="flex min-h-[calc(44rem-7rem)] flex-col justify-center" onSubmit={handleSubmit}>
+      <form method="post" action="#" className="flex min-h-[calc(44rem-7rem)] flex-col" onSubmit={handleSubmit}>
         <div className="space-y-6">
           {feedback && (
             <div
