@@ -562,7 +562,7 @@ const AuthForm = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-4">
+          <div className="flex flex-col items-center gap-4">
             <button
               className="rounded-md bg-primary px-4 py-2 font-bold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               type="submit"
