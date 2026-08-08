@@ -60,20 +60,21 @@ export function BlogPageHero({
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch">
         <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/95 shadow-sm">
           {hasForumImage ? (
-            <div className="relative aspect-[16/9] min-h-[250px] w-full">
+            <div className="flex min-h-[250px] flex-col justify-center gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
               <img
                 src={forumProfileImage}
                 alt={activeForum ? `Imagen principal del foro ${activeForum.name}` : 'Imagen del foro'}
-                className="block h-full w-full object-cover object-center"
+                className="size-24 shrink-0 self-center rounded-full border-4 border-background object-cover object-center shadow-md sm:size-28 sm:self-auto"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-card/76 via-card/10 via-20% to-transparent" />
-              <div className="absolute inset-y-0 left-0 w-[11%] bg-linear-to-r from-background/78 via-background/24 to-transparent sm:w-[8%]" />
-              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-1 text-xs font-medium text-white/92 backdrop-blur-sm">
+              <div className="min-w-0 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
                   <Sparkles className="size-3.5" />
                   Foto de perfil del foro
                 </div>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-white/88">
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                  {activeForum?.name ?? 'Comunidad abierta'}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
                   {activeForum?.description ??
                     'Selecciona un foro para dejar claro el contexto de lectura y publicacion.'}
                 </p>
