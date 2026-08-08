@@ -324,12 +324,12 @@ const AuthForm = () => {
   }
 
   return (
-    <div className="relative z-10 mx-auto max-w-2xl min-h-[44rem] overflow-hidden rounded-lg border border-border bg-card p-8 shadow-md before:absolute before:-left-10 before:-top-10 before:-z-10 before:h-56 before:w-56 before:rounded-full before:bg-primary/50 before:blur-3xl after:absolute after:top-16 after:-right-20 after:-z-10 after:h-64 after:w-64 after:rounded-full after:bg-primary/25 after:blur-3xl">
+    <div className="relative z-10 mx-auto max-w-2xl min-h-[38rem] overflow-hidden rounded-lg border border-border bg-card p-8 shadow-md before:absolute before:-left-10 before:-top-10 before:-z-10 before:h-56 before:w-56 before:rounded-full before:bg-primary/50 before:blur-3xl after:absolute after:top-16 after:-right-20 after:-z-10 after:h-64 after:w-64 after:rounded-full after:bg-primary/25 after:blur-3xl">
       <h2 className="mb-6 text-2xl font-bold text-foreground">
         {isLogin ? 'Inicia sesion en Mentras' : 'Crea tu cuenta en Mentras'}
       </h2>
 
-      <form method="post" action="#" className="flex min-h-[calc(44rem-7rem)] flex-col" onSubmit={handleSubmit}>
+      <form method="post" action="#" className="flex min-h-[calc(38rem-7rem)] flex-col" onSubmit={handleSubmit}>
         <div className="space-y-6">
           {feedback && (
             <div
