@@ -15,6 +15,7 @@ type ApiForumRecord = {
   description?: string
   profile_pic?: string
   is_private?: boolean
+  is_member?: boolean
   created_at?: string
 }
 
@@ -202,6 +203,7 @@ const normalizeForum = (forum: ApiForumRecord, index: number): ForumRecord => ({
       : 'Sin descripcion disponible.',
   profilePic: typeof forum.profile_pic === 'string' ? forum.profile_pic : '',
   isPrivate: Boolean(forum.is_private),
+  isMember: Boolean(forum.is_member),
   createdAt: typeof forum.created_at === 'string' ? forum.created_at : '',
 })
 
@@ -374,6 +376,10 @@ export function BlogForumPrototype() {
   const activeForum =
     forums.find((forum) => forum.id === selectedForumId) ??
     (forums.length > 0 ? forums[0] : null)
+  const isPrivateForumLocked = Boolean(activeForum?.isPrivate && !activeForum.isMember)
+  const forumForDisplay = isPrivateForumLocked && activeForum
+    ? { ...activeForum, description: 'Este foro es privado. Debes ser miembro para ver su contenido.' }
+    : activeForum
 
   useEffect(() => {
     if (!activeForum || selectedForumId === activeForum.id) {
@@ -394,7 +400,9 @@ export function BlogForumPrototype() {
       : null
 
   const visiblePosts =
-    activeForum && supportsScopedPosts
+    isPrivateForumLocked
+      ? []
+      : activeForum && supportsScopedPosts
       ? posts.filter((post) => post.forumId === activeForum.id)
       : posts
 
@@ -404,7 +412,9 @@ export function BlogForumPrototype() {
       : `Actividad reciente con ${activeForum.name} como contexto activo`
     : 'Actividad reciente de la comunidad'
 
-  const feedDescription = activeForum
+  const feedDescription = isPrivateForumLocked
+    ? 'El contenido de este foro está restringido a sus miembros.'
+    : activeForum
     ? supportsScopedPosts
       ? 'Estas publicaciones corresponden al foro que tienes seleccionado en este momento.'
       : 'El formulario queda amarrado al foro activo y el listado mantiene las publicaciones recientes disponibles.'
@@ -519,7 +529,7 @@ export function BlogForumPrototype() {
   return (
     <div className="space-y-8">
       <BlogPageHero
-        activeForum={activeForum}
+        activeForum={forumForDisplay}
         forumCount={forums.length}
         postCount={posts.length}
         visualPostCount={visualPostCount}
@@ -551,6 +561,7 @@ export function BlogForumPrototype() {
           isLoadingPosts={isLoadingPosts || isLoadingForums}
           isSubmittingPost={isSubmittingPost}
           posts={visiblePosts}
+          isPrivateForumLocked={isPrivateForumLocked}
           useActiveForumAsCardLabel={supportsScopedPosts}
           onDeletePost={handleDeletePost}
           onSubmitPost={handleSubmitPost}

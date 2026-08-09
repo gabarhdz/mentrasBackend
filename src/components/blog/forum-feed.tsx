@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Flame, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Flame, LockKeyhole, Sparkles } from 'lucide-react'
 
 import type { ForumComposerPayload, ForumPost, ForumRecord } from './blog-types'
 import { ForumComposerCard } from './forum-composer-card'
@@ -18,6 +18,7 @@ type ForumFeedProps = {
   feedDescription: string
   currentUserId?: string | null
   useActiveForumAsCardLabel?: boolean
+  isPrivateForumLocked?: boolean
   onSubmitPost: (payload: ForumComposerPayload) => Promise<void>
   onDeletePost: (postId: string) => Promise<void>
 }
@@ -35,6 +36,7 @@ export function ForumFeed({
   feedDescription,
   currentUserId,
   useActiveForumAsCardLabel = false,
+  isPrivateForumLocked = false,
   onSubmitPost,
   onDeletePost,
 }: ForumFeedProps) {
@@ -75,7 +77,7 @@ export function ForumFeed({
         </div>
       </section>
 
-      <ForumComposerCard
+      {!isPrivateForumLocked ? <ForumComposerCard
         activeForum={activeForum}
         canPublish={canPublish}
         errorMessage={composerErrorMessage}
@@ -84,9 +86,21 @@ export function ForumFeed({
         isSubmitting={isSubmittingPost}
         onExpandChange={setIsComposerExpanded}
         onSubmit={onSubmitPost}
-      />
+      /> : null}
 
-      <div className="space-y-5">
+      {isPrivateForumLocked ? (
+        <section className="rounded-[1.75rem] border border-border/70 bg-card/92 p-8 text-center shadow-sm">
+          <div className="mx-auto inline-flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <LockKeyhole className="size-5" />
+          </div>
+          <h3 className="mt-4 text-xl font-semibold text-foreground">Foro privado</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            Debes ser miembro de este foro para ver sus publicaciones y participar en la conversación.
+          </p>
+        </section>
+      ) : null}
+
+      {!isPrivateForumLocked ? <div className="space-y-5">
         {isLoadingPosts ? (
           <div className="rounded-[1.75rem] border border-border/70 bg-card/92 p-6 text-sm text-muted-foreground shadow-sm">
             Cargando publicaciones...
@@ -116,7 +130,7 @@ export function ForumFeed({
               />
             ))
           : null}
-      </div>
+      </div> : null}
 
       {!isLoadingPosts && posts.length > postsPerPage ? (
         <nav className="flex items-center justify-center gap-3" aria-label="Paginación de publicaciones">
