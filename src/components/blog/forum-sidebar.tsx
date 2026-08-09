@@ -332,23 +332,7 @@ export function ForumSidebar({
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] border border-border/70 bg-linear-to-br from-card via-card to-primary/8 p-5 shadow-sm">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">Galeria por publicacion</h3>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Las tarjetas contemplan todos los casos admitidos en esta seccion visual.
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {['0 fotos', '1 foto', '2 fotos', '3 fotos', '4 fotos'].map((item) => (
-            <span
-              key={item}
-              className="rounded-full border border-border/70 bg-background/80 px-3 py-1 text-xs text-muted-foreground"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-      </section>
+      
     </aside>
   )
 }

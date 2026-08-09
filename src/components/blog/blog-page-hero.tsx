@@ -57,16 +57,16 @@ export function BlogPageHero({
 
   return (
     <section className="rounded-[2rem] border border-border/70 bg-linear-to-br from-background via-card to-primary/8 p-6 shadow-sm sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch">
+      <div className="grid items-start gap-6">
         <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/95 shadow-sm">
           {hasForumImage ? (
-            <div className="flex min-h-[250px] flex-col justify-center gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex min-h-[250px] flex-col items-center justify-center gap-5 p-6 text-center sm:p-8">
               <img
                 src={forumProfileImage}
                 alt={activeForum ? `Imagen principal del foro ${activeForum.name}` : 'Imagen del foro'}
-                className="size-24 shrink-0 self-center rounded-full border-4 border-background object-cover object-center shadow-md sm:size-28 sm:self-auto"
+                className="size-24 shrink-0 rounded-full border-4 border-background object-cover object-center shadow-md sm:size-28"
               />
-              <div className="min-w-0 text-center sm:text-left">
+              <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-xs font-medium text-primary">
                   <Sparkles className="size-3.5" />
                   Foto de perfil del foro
@@ -120,7 +120,7 @@ export function BlogPageHero({
             className="max-w-none space-y-3"
           />
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             <div className="rounded-[1.25rem] border border-border/70 bg-card/90 p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 {activeForum?.isPrivate ? (
