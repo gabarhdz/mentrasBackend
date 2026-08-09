@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronDown, Flame, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ChevronDown, ChevronLeft, ChevronRight, Flame, Sparkles } from 'lucide-react'
 
 import type { ForumComposerPayload, ForumPost, ForumRecord } from './blog-types'
 import { ForumComposerCard } from './forum-composer-card'
@@ -39,6 +39,14 @@ export function ForumFeed({
   onDeletePost,
 }: ForumFeedProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const postsPerPage = 5
+  const totalPages = Math.max(1, Math.ceil(posts.length / postsPerPage))
+  const paginatedPosts = posts.slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeForum?.id, posts.length])
 
   return (
     <div className="space-y-6">
@@ -97,7 +105,7 @@ export function ForumFeed({
         ) : null}
 
         {!isLoadingPosts
-          ? posts.map((post) => (
+          ? paginatedPosts.map((post) => (
               <ForumPostCard
                 key={post.id}
                 currentForumName={useActiveForumAsCardLabel ? activeForum?.name ?? null : null}
@@ -109,6 +117,34 @@ export function ForumFeed({
             ))
           : null}
       </div>
+
+      {!isLoadingPosts && posts.length > postsPerPage ? (
+        <nav className="flex items-center justify-center gap-3" aria-label="Paginación de publicaciones">
+          <button
+            type="button"
+            aria-label="Página anterior"
+            disabled={currentPage === 1}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-card/92 text-muted-foreground transition hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+
+          <span className="text-sm font-medium text-muted-foreground">
+            Página {currentPage} de {totalPages}
+          </span>
+
+          <button
+            type="button"
+            aria-label="Página siguiente"
+            disabled={currentPage === totalPages}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-card/92 text-muted-foreground transition hover:border-primary/30 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </nav>
+      ) : null}
     </div>
   )
 }
