@@ -388,9 +388,9 @@ Returns one forum.
 }
 ```
 
-#### `POST /api/forum/<uuid:id>/`
+#### `PATCH /api/forum/<uuid:id>/`
 
-Used as a partial update route for a forum.
+Updates a forum partially. Only a forum administrator can edit it.
 
 Request:
 
@@ -400,6 +400,10 @@ Request:
   "is_private": true
 }
 ```
+
+#### `DELETE /api/forum/<uuid:id>/`
+
+Deletes a forum. Only a forum administrator can delete it.
 
 #### `GET /api/forum/post/`
 

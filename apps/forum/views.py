@@ -34,6 +34,13 @@ class AllForums(APIView):
 class DetailedForums(APIView):
     permission_classes = [IsAuthenticated]
 
+    def _is_forum_admin(self, forum, user):
+        return ForumUser.objects.filter(
+            forum=forum,
+            user=user,
+            isAdmin=True,
+        ).exists()
+
     def get(self, request, id, *args, **kwargs):
         try:
             forum = Forum.objects.get(id=id)
@@ -44,21 +51,42 @@ class DetailedForums(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, id, *args, **kwargs):
+        return self.patch(request, id, *args, **kwargs)
+
+    def patch(self, request, id, *args, **kwargs):
         try:
             forum = Forum.objects.get(id=id)
         except Forum.DoesNotExist:
             return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not self._is_forum_admin(forum, request.user):
+            return Response(
+                {'error': 'You do not have permission to edit this forum'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = ForumSerializer(forum, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             forum = serializer.save()
-            if request.user.is_authenticated:
-                ForumUser.objects.update_or_create(
-                    forum=forum,
-                    user=request.user,
-                    defaults={'isAdmin': True},
-                )
+            response_serializer = ForumSerializer(forum, context={'request': request})
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, id, *args, **kwargs):
+        try:
+            forum = Forum.objects.get(id=id)
+        except Forum.DoesNotExist:
+            return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not self._is_forum_admin(forum, request.user):
+            return Response(
+                {'error': 'You do not have permission to delete this forum'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        forum.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AllPost(APIView):
