@@ -35,6 +35,9 @@ class DetailedForums(APIView):
     permission_classes = [IsAuthenticated]
 
     def _is_forum_admin(self, forum, user):
+        if user.is_admin:
+            return True
+
         return ForumUser.objects.filter(
             forum=forum,
             user=user,
