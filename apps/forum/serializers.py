@@ -7,6 +7,25 @@ from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 class ForumSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     profile_pic = CloudinaryImageField(required=False, allow_null=True)
+    is_member = serializers.SerializerMethodField()
+    is_admin = serializers.SerializerMethodField()
+
+    def _get_forum_user(self, obj):
+        request = self.context.get('request')
+        if request is None or not request.user.is_authenticated:
+            return None
+
+        return ForumUser.objects.filter(
+            forum=obj,
+            user=request.user,
+        ).first()
+
+    def get_is_member(self, obj):
+        return self._get_forum_user(obj) is not None
+
+    def get_is_admin(self, obj):
+        forum_user = self._get_forum_user(obj)
+        return forum_user is not None and forum_user.isAdmin
 
     def create(self, validated_data):
         profile_pic_file = validated_data.pop("profile_pic", None)
@@ -46,8 +65,8 @@ class ForumSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Forum
-        fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at', 'created_by']
-        read_only_fields = ['id', 'created_at', 'created_by']
+        fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at', 'created_by', 'is_member', 'is_admin']
+        read_only_fields = ['id', 'created_at', 'created_by', 'is_member', 'is_admin']
     def validate_name(self, value):
         if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the forum name.")

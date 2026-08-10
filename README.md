@@ -392,6 +392,13 @@ Returns one forum.
 
 Updates a forum partially. Only a forum administrator can edit it.
 
+To update the forum profile photo, send the request as `multipart/form-data`
+with the field `profile_pic` containing the image file:
+
+```text
+profile_pic: forum-cover.jpg
+```
+
 Request:
 
 ```json
