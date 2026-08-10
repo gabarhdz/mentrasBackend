@@ -40,7 +40,6 @@ type ApiPostRecord = {
   user?: ApiPostUser | null
 }
 
-type ApiUserProfile = { is_admin?: boolean }
 type ApiJoinRequest = { id?: string; forum_id?: string; user?: ApiPostUser; status?: 'pending' | 'approved' | 'rejected'; created_at?: string }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -399,7 +398,6 @@ export function BlogForumPrototype() {
   const [managedForumIds, setManagedForumIds] = useState<string[]>([])
   const [isJoiningForum, setIsJoiningForum] = useState(false)
   const [joinMessage, setJoinMessage] = useState<string | null>(null)
-  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false)
   const [joinRequests, setJoinRequests] = useState<ApiJoinRequest[]>([])
 
   useEffect(() => {
@@ -427,16 +425,9 @@ export function BlogForumPrototype() {
   }, [])
 
   useEffect(() => {
-    if (!userId || !hasStoredSession()) return
-    void authFetch(buildBackendUrl(`/api/user/${userId}/`)).then(async (response) => {
-      if (response.ok) setIsGlobalAdmin(Boolean((await response.json() as ApiUserProfile).is_admin))
-    })
-  }, [userId])
-
-  useEffect(() => {
-    if (!isGlobalAdmin) return
+    if (!hasStoredSession()) return
     void fetchJoinRequests().then(setJoinRequests).catch(() => undefined)
-  }, [isGlobalAdmin])
+  }, [])
 
   const selectedForumId = searchParams.get('forum')
   const activeForum =
@@ -523,6 +514,7 @@ export function BlogForumPrototype() {
       nextSearchParams.set('forum', createdForum.id)
       setSearchParams(nextSearchParams)
       setCreateForumSuccessMessage(`El foro ${createdForum.name} ya esta disponible.`)
+      void fetchJoinRequests().then(setJoinRequests).catch(() => undefined)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo crear el foro.'
       setCreateForumErrorMessage(message)
@@ -674,7 +666,7 @@ export function BlogForumPrototype() {
           isJoiningForum={isJoiningForum}
           joinMessage={joinMessage}
           onJoinForum={handleJoinForum}
-          joinRequests={isGlobalAdmin ? joinRequests : []}
+          joinRequests={joinRequests}
           onJoinDecision={handleJoinDecision}
         />
 
