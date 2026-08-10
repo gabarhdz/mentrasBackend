@@ -3,8 +3,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Forum,ForumUser,Post
-from .serializers import ForumSerializer,PostSerializer
+from .models import Forum, ForumJoinRequest, ForumUser, Post
+from .serializers import ForumJoinRequestSerializer, ForumSerializer, PostSerializer
 
 
 class AllForums(APIView):
@@ -90,6 +90,67 @@ class DetailedForums(APIView):
 
         forum.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class JoinForum(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id, *args, **kwargs):
+        try:
+            forum = Forum.objects.get(id=id)
+        except Forum.DoesNotExist:
+            return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if ForumUser.objects.filter(forum=forum, user=request.user).exists():
+            return Response({'error': 'You are already a member of this forum'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not forum.is_private:
+            ForumUser.objects.create(forum=forum, user=request.user, isAdmin=False)
+            return Response({'message': 'You joined the forum'}, status=status.HTTP_201_CREATED)
+
+        join_request, created = ForumJoinRequest.objects.get_or_create(
+            forum=forum,
+            user=request.user,
+        )
+        if not created and join_request.status == ForumJoinRequest.REJECTED:
+            join_request.status = ForumJoinRequest.PENDING
+            join_request.save(update_fields=['status'])
+
+        return Response(
+            {'message': 'Join request sent', 'status': join_request.status},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+class ForumJoinRequests(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_admin:
+            return Response({'error': 'You do not have permission to review join requests'}, status=status.HTTP_403_FORBIDDEN)
+
+        requests = ForumJoinRequest.objects.filter(status=ForumJoinRequest.PENDING).order_by('-created_at')
+        serializer = ForumJoinRequestSerializer(requests, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, id, *args, **kwargs):
+        if not request.user.is_admin:
+            return Response({'error': 'You do not have permission to review join requests'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            join_request = ForumJoinRequest.objects.get(id=id, status=ForumJoinRequest.PENDING)
+        except ForumJoinRequest.DoesNotExist:
+            return Response({'error': 'Join request not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        decision = request.data.get('status')
+        if decision not in [ForumJoinRequest.APPROVED, ForumJoinRequest.REJECTED]:
+            return Response({'error': 'Status must be approved or rejected'}, status=status.HTTP_400_BAD_REQUEST)
+
+        join_request.status = decision
+        join_request.save(update_fields=['status'])
+        if decision == ForumJoinRequest.APPROVED:
+            ForumUser.objects.get_or_create(forum=join_request.forum, user=join_request.user)
+
+        serializer = ForumJoinRequestSerializer(join_request, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AllPost(APIView):

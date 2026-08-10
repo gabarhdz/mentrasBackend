@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ForumUser, Forum, Post
+from .models import ForumJoinRequest, ForumUser, Forum, Post
 from apps.user.serializers import UserSerializer
 from better_profanity import profanity
 from globals.cloudinary import CloudinaryImageField, upload_profile_pic
@@ -73,7 +73,17 @@ class PostSerializer(serializers.ModelSerializer):
         if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the post text.")
         return value
+
     def validate_title(self,value):
         if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the post title.")
         return value
+
+class ForumJoinRequestSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    forum_id = serializers.UUIDField(source='forum.id', read_only=True)
+
+    class Meta:
+        model = ForumJoinRequest
+        fields = ['id', 'forum_id', 'user', 'status', 'created_at']
+        read_only_fields = ['id', 'forum_id', 'user', 'created_at']
