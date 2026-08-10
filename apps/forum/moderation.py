@@ -36,7 +36,7 @@ def post_contains_profanity(title, text):
             },
         ],
         'temperature': 0,
-        'max_tokens': 50,
+        'max_tokens': 256,
     }
 
     headers = {
@@ -70,7 +70,10 @@ def post_contains_profanity(title, text):
                 continue
 
             response.raise_for_status()
-            content = response.json()['choices'][0]['message']['content']
+            message = response.json()['choices'][0]['message']
+            content = message.get('content')
+            if not content:
+                raise ValueError('Cerebras response did not include message content')
             result = json.loads(content)
             return bool(result['contains_profanity'])
         except ModerationServiceError:
