@@ -52,13 +52,13 @@ export function ForumPostCard({
 
           <div>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{post.author.username}</span>
-              <span>{post.author.roleLabel}</span>
+              <span data-i18n-skip className="font-medium text-foreground">{post.author.username}</span>
+              <span data-i18n-skip>{post.author.roleLabel}</span>
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-border/70 bg-background/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-primary">
-                {currentForumName || 'Comunidad'}
+                <span data-i18n-skip>{currentForumName || 'Comunidad'}</span>
               </span>
               <span className="text-xs text-muted-foreground">{formatDateTime(post.createdAt)}</span>
             </div>
@@ -72,15 +72,15 @@ export function ForumPostCard({
       </div>
 
       <div className="mt-5">
-        <h3 className="text-2xl font-semibold tracking-tight text-foreground">{post.title}</h3>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{post.text}</p>
+        <h3 data-i18n-skip className="text-2xl font-semibold tracking-tight text-foreground">{post.title}</h3>
+        <p data-i18n-skip className="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{post.text}</p>
       </div>
 
       <ForumPostMediaGrid images={post.images} />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
         <p className="text-sm text-muted-foreground">
-          Publicacion creada por <span className="font-medium text-foreground">{post.author.username}</span>
+          Publicacion creada por <span data-i18n-skip className="font-medium text-foreground">{post.author.username}</span>
         </p>
 
         {isOwnPost && onDelete ? (

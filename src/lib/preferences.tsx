@@ -1,7 +1,8 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
-import { startUiTranslationObserver } from '@/lib/ui-translations'
 
-export type Language = 'es' | 'en' | 'pt' | 'fr' | 'de' | 'it' | 'ru' | 'zh' | 'ja' | 'ar' | 'hi' | 'nl'
+import i18n, { LANGUAGE_STORAGE_KEY, type AppLanguage } from '@/i18n'
+
+export type Language = AppLanguage
 export type Theme = 'light' | 'dark'
 
 export const languageOptions = [
@@ -19,8 +20,6 @@ export const languageOptions = [
   { value: 'nl', flag: '🇳🇱', shortLabel: 'NL', label: 'Nederlands' },
 ] as const satisfies readonly { value: Language; flag: string; shortLabel: string; label: string }[]
 
-const supportedLanguageValues = new Set<Language>(languageOptions.map((option) => option.value))
-
 type PreferencesContextValue = {
   language: Language
   setLanguage: (language: Language) => void
@@ -29,13 +28,7 @@ type PreferencesContextValue = {
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null)
-const LANGUAGE_KEY = 'mentras.language'
 const THEME_KEY = 'mentras.theme'
-
-const readLanguage = (): Language => {
-  const storedLanguage = localStorage.getItem(LANGUAGE_KEY)
-  return supportedLanguageValues.has(storedLanguage as Language) ? (storedLanguage as Language) : 'es'
-}
 const readTheme = (): Theme => localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
 
 export const getLocalizedCopy = <CopyMap extends Partial<Record<Language, unknown>>>(
@@ -44,15 +37,20 @@ export const getLocalizedCopy = <CopyMap extends Partial<Record<Language, unknow
 ) => (copy[language] ?? copy.es ?? copy.en ?? Object.values(copy)[0]) as CopyMap[keyof CopyMap]
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(readLanguage)
+  const [language, setCurrentLanguage] = useState<Language>(i18n.language as Language)
   const [theme, setTheme] = useState<Theme>(readTheme)
 
   useEffect(() => {
-    localStorage.setItem(LANGUAGE_KEY, language)
-    document.documentElement.lang = language
-  }, [language])
+    const syncLanguage = (nextLanguage: string) => setCurrentLanguage(nextLanguage as Language)
+    i18n.on('languageChanged', syncLanguage)
+    return () => i18n.off('languageChanged', syncLanguage)
+  }, [])
 
-  useEffect(() => startUiTranslationObserver(language), [language])
+  useEffect(() => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+    document.documentElement.lang = language
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
+  }, [language])
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme)
@@ -60,7 +58,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   return (
-    <PreferencesContext.Provider value={{ language, setLanguage, theme, setTheme }}>
+    <PreferencesContext.Provider value={{ language, setLanguage: (nextLanguage) => void i18n.changeLanguage(nextLanguage), theme, setTheme }}>
       {children}
     </PreferencesContext.Provider>
   )
