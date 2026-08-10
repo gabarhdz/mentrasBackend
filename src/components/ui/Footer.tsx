@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { usePreferences } from '@/lib/preferences'
 
 const footerGroups = [
   {
@@ -29,6 +30,10 @@ const footerGroups = [
 const currentYear = new Date().getFullYear()
 
 const Footer = () => {
+  const { language } = usePreferences()
+  const text = language === 'en'
+    ? { description: 'Tools, learning and digital structure for small businesses that want to grow with clarity.', base: 'Digital foundation for businesses that need organization, presence and follow-up.' }
+    : { description: 'Herramientas, aprendizaje y estructura digital para pymes que quieren crecer con mas claridad.', base: 'Base digital para pymes que necesitan orden, presencia y seguimiento.' }
   return (
     <footer className="border-t border-border/70 bg-card/70 px-6 py-12 backdrop-blur md:px-12 lg:px-24 xl:px-40">
       <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.35fr_0.85fr_0.85fr_0.85fr]">
@@ -37,8 +42,7 @@ const Footer = () => {
             Mentras
           </Link>
           <p className="max-w-md text-sm leading-7 text-muted-foreground sm:text-base">
-            Herramientas, aprendizaje y estructura digital para pymes que quieren crecer con
-            mas claridad.
+            {text.description}
           </p>
         </div>
 
@@ -62,7 +66,7 @@ const Footer = () => {
 
       <div className="mx-auto mt-10 flex max-w-6xl flex-col gap-3 border-t border-border/70 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>© {currentYear} Mentras</p>
-        <p>Base digital para pymes que necesitan orden, presencia y seguimiento.</p>
+        <p>{text.base}</p>
       </div>
     </footer>
   )

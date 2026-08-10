@@ -1,9 +1,7 @@
 import { ArrowLeft, Compass, Home, SearchCheck } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Reveal } from "@/components/ui/reveal";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const quickLinks = [
   {
@@ -30,16 +28,7 @@ const quickLinks = [
 ];
 
 export default function NotFound() {
-  const [isDark, setIsDark] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-
-    return () => {
-      document.documentElement.classList.remove("dark");
-    };
-  }, [isDark]);
 
   return (
     <main className="relative isolate min-h-screen overflow-hidden text-foreground">
@@ -53,7 +42,6 @@ export default function NotFound() {
               <span className="size-2 rounded-full bg-primary" />
               Mentras
             </Link>
-            <ThemeToggle isDark={isDark} onToggle={() => setIsDark((current) => !current)} />
           </div>
 
           <section className="mt-12 grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">

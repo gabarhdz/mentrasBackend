@@ -1,15 +1,20 @@
 import React from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { usePreferences } from '@/lib/preferences'
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const { language } = usePreferences()
+  const text = language === 'en'
+    ? { pymes: 'Businesses', learning: 'Learning', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Settings', profile: 'My profile' }
+    : { pymes: 'Pymes', learning: 'Aprendizaje', tools: 'Herramientas', dashboard: 'Dashboard', blog: 'Blog', settings: 'Opciones', profile: 'Ir a mi perfil' }
   const navItems = [
-    { label: 'Pymes', to: '/pymes' },
-    { label: 'Aprendizaje', to: '/aprendizaje' },
-    { label: 'Herramientas', to: '/herramientas' },
-    { label: 'Dashboard', to: '/dashboard' },
-    {label: 'Blog', to: '/blog'},
-    /*{/*label: 'Configuración', to: '/settings  '}*/
+    { label: text.pymes, to: '/pymes' },
+    { label: text.learning, to: '/aprendizaje' },
+    { label: text.tools, to: '/herramientas' },
+    { label: text.dashboard, to: '/dashboard' },
+    { label: text.blog, to: '/blog' },
+    { label: text.settings, to: '/settings' },
   ]
 
   return (
@@ -40,7 +45,7 @@ const Header = () => {
         to="/profile"
         className="hidden items-center gap-2.5 rounded-full border-0 bg-linear-to-r from-accent to-primary py-2 pl-5 pr-2 text-sm font-medium text-primary-foreground shadow-lg shadow-accent/20 transition-[background-image,background-color,box-shadow] duration-300 ease-out hover:bg-accent hover:bg-none hover:shadow-accent/30 md:flex"
       >
-        Ir a mi perfil
+        {text.profile}
         <span className="flex size-7 items-center justify-center rounded-full bg-white">
           <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M.6 4.602h10m-4-4 4 4-4 4" stroke="#3f3f47" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -80,7 +85,7 @@ const Header = () => {
             onClick={() => setMenuOpen(false)}
             className="mt-3 flex w-fit items-center justify-center gap-2.5 rounded-full bg-linear-to-r from-accent to-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-accent/20 transition-[background-image,background-color,box-shadow] duration-300 ease-out hover:bg-accent hover:bg-none hover:shadow-accent/30"
           >
-            Ir a mi perfil
+            {text.profile}
             <span className="flex size-7 items-center justify-center rounded-full bg-white">
               <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M.6 4.602h10m-4-4 4 4-4 4" stroke="#3f3f47" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />

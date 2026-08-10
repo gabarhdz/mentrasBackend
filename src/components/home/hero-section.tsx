@@ -3,12 +3,6 @@ import { motion } from "motion/react";
 
 import { MarqueeStrip } from "@/components/ui/marquee-strip";
 import { Reveal } from "@/components/ui/reveal";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-
-type HeroSectionProps = {
-  isDark: boolean;
-  onToggleTheme: () => void;
-};
 
 const heroPoints = [
   {
@@ -34,7 +28,7 @@ const marqueeItems = [
   "Presencia profesional",
 ];
 
-export function HeroSection({ isDark, onToggleTheme }: HeroSectionProps) {
+export function HeroSection() {
   return (
     <section className="relative overflow-hidden px-6 pb-16 pt-6 sm:pb-24 sm:pt-10">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--secondary)_28%,transparent),transparent_46%),radial-gradient(circle_at_80%_10%,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_42%),linear-gradient(to_bottom,_color-mix(in_oklab,var(--background)_30%,transparent),transparent_100%)] [mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)]" />
@@ -45,7 +39,6 @@ export function HeroSection({ isDark, onToggleTheme }: HeroSectionProps) {
             <span className="size-2 rounded-full bg-primary" />
             Mentras
           </div>
-          <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
         </div>
 
         <div className="mt-12 grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-4">
