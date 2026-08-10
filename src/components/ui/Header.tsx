@@ -5,9 +5,13 @@ import { usePreferences } from '@/lib/preferences'
 const Header = () => {
   const [menuOpen, setMenuOpen] = React.useState(false)
   const { language } = usePreferences()
-  const text = language === 'en'
-    ? { pymes: 'Businesses', learning: 'Learning', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Settings', profile: 'My profile' }
-    : { pymes: 'Pymes', learning: 'Aprendizaje', tools: 'Herramientas', dashboard: 'Dashboard', blog: 'Blog', settings: 'Opciones', profile: 'Ir a mi perfil' }
+  const texts = {
+    es: { pymes: 'Pymes', learning: 'Aprendizaje', tools: 'Herramientas', dashboard: 'Dashboard', blog: 'Blog', settings: 'Opciones', profile: 'Ir a mi perfil' },
+    en: { pymes: 'Businesses', learning: 'Learning', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Settings', profile: 'My profile' },
+    pt: { pymes: 'Empresas', learning: 'Aprendizagem', tools: 'Ferramentas', dashboard: 'Painel', blog: 'Blog', settings: 'Opções', profile: 'Meu perfil' },
+    fr: { pymes: 'Entreprises', learning: 'Apprentissage', tools: 'Outils', dashboard: 'Tableau de bord', blog: 'Blog', settings: 'Paramètres', profile: 'Mon profil' },
+  }
+  const text = texts[language]
   const navItems = [
     { label: text.pymes, to: '/pymes' },
     { label: text.learning, to: '/aprendizaje' },

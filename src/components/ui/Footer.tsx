@@ -31,9 +31,13 @@ const currentYear = new Date().getFullYear()
 
 const Footer = () => {
   const { language } = usePreferences()
-  const text = language === 'en'
-    ? { description: 'Tools, learning and digital structure for small businesses that want to grow with clarity.', base: 'Digital foundation for businesses that need organization, presence and follow-up.' }
-    : { description: 'Herramientas, aprendizaje y estructura digital para pymes que quieren crecer con mas claridad.', base: 'Base digital para pymes que necesitan orden, presencia y seguimiento.' }
+  const texts = {
+    es: { description: 'Herramientas, aprendizaje y estructura digital para pymes que quieren crecer con mas claridad.', base: 'Base digital para pymes que necesitan orden, presencia y seguimiento.' },
+    en: { description: 'Tools, learning and digital structure for small businesses that want to grow with clarity.', base: 'Digital foundation for businesses that need organization, presence and follow-up.' },
+    pt: { description: 'Ferramentas, aprendizagem e estrutura digital para empresas que querem crescer com mais clareza.', base: 'Base digital para empresas que precisam de organização, presença e acompanhamento.' },
+    fr: { description: 'Des outils, de l’apprentissage et une structure numérique pour les entreprises qui souhaitent se développer clairement.', base: 'Une base numérique pour les entreprises qui ont besoin d’organisation, de présence et de suivi.' },
+  }
+  const text = texts[language]
   return (
     <footer className="border-t border-border/70 bg-card/70 px-6 py-12 backdrop-blur md:px-12 lg:px-24 xl:px-40">
       <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.35fr_0.85fr_0.85fr_0.85fr]">

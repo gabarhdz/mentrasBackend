@@ -15,6 +15,18 @@ const copy = {
     appearance: 'Appearance', appearanceDetail: 'Your selected theme applies across the entire website.',
     spanish: 'Español', english: 'English', light: 'Light mode', dark: 'Dark mode', active: 'Active',
   },
+  pt: {
+    title: 'Opções', description: 'Personalize como o Mentras é exibido em todo o site.',
+    language: 'Idioma', languageDetail: 'Defina o idioma usado na navegação e nas telas compartilhadas.',
+    appearance: 'Aparência', appearanceDetail: 'O tema selecionado é aplicado em todo o site.',
+    spanish: 'Español', english: 'English', light: 'Modo claro', dark: 'Modo escuro', active: 'Ativo',
+  },
+  fr: {
+    title: 'Paramètres', description: 'Personnalisez l’affichage de Mentras sur l’ensemble du site.',
+    language: 'Langue', languageDetail: 'Définissez la langue utilisée dans la navigation et les écrans partagés.',
+    appearance: 'Apparence', appearanceDetail: 'Le thème sélectionné s’applique à l’ensemble du site.',
+    spanish: 'Español', english: 'English', light: 'Mode clair', dark: 'Mode sombre', active: 'Actif',
+  },
 }
 
 const Settings = () => {
@@ -34,7 +46,7 @@ const Settings = () => {
           <section className="mt-8">
             <div className="flex items-center gap-3"><Globe2 className="size-5 text-primary" /><div><h2 className="font-semibold">{t.language}</h2><p className="text-sm text-muted-foreground">{t.languageDetail}</p></div></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {([['es', t.spanish], ['en', t.english]] as [Language, string][]).map(([value, label]) => <button key={value} type="button" className={optionClass(language === value)} onClick={() => setLanguage(value)}><span>{label}</span>{language === value ? <Check className="size-5 text-primary" /> : null}</button>)}
+              {([['es', '🇪🇸', t.spanish], ['en', '🇺🇸', t.english], ['pt', '🇧🇷', 'Português'], ['fr', '🇫🇷', 'Français']] as [Language, string, string][]).map(([value, flag, label]) => <button key={value} type="button" className={optionClass(language === value)} onClick={() => setLanguage(value)}><span className="flex items-center gap-3"><span className="text-xl" role="img" aria-label={label}>{flag}</span>{label}</span>{language === value ? <Check className="size-5 text-primary" /> : null}</button>)}
             </div>
           </section>
 

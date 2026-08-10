@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 
-export type Language = 'es' | 'en'
+export type Language = 'es' | 'en' | 'pt' | 'fr'
 export type Theme = 'light' | 'dark'
 
 type PreferencesContextValue = {
@@ -14,7 +14,10 @@ const PreferencesContext = createContext<PreferencesContextValue | null>(null)
 const LANGUAGE_KEY = 'mentras.language'
 const THEME_KEY = 'mentras.theme'
 
-const readLanguage = (): Language => localStorage.getItem(LANGUAGE_KEY) === 'en' ? 'en' : 'es'
+const readLanguage = (): Language => {
+  const storedLanguage = localStorage.getItem(LANGUAGE_KEY)
+  return storedLanguage === 'en' || storedLanguage === 'pt' || storedLanguage === 'fr' ? storedLanguage : 'es'
+}
 const readTheme = (): Theme => localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
