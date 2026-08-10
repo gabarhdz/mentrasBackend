@@ -7,6 +7,7 @@ import type { UnitSummary } from '@/components/learning/course-learning-types'
 import Footer from '@/components/ui/Footer'
 import Header from '@/components/ui/Header'
 import { authFetch, clearAuthTokens, getStoredUserId, hasStoredSession } from '@/lib/auth'
+import { usePreferences } from '@/lib/preferences'
 import { buildBackendUrl } from '@/lib/utils'
 
 type UserProfile = {
@@ -58,6 +59,145 @@ const normalizeCoursesResponse = (payload: unknown) => {
 
 const getVisualBarHeight = (value: number, multiplier: number) =>
   Math.max(24, Math.min(MAX_VISUAL_BAR_HEIGHT, value * multiplier))
+
+const copy = {
+  es: {
+    badge: 'Aprendizaje',
+    title: 'Explora los cursos y entra al contenido desde una vista mucho mas clara',
+    description:
+      'Revisa el catalogo completo y abre cualquier curso para navegar sus unidades y lecciones en una pagina dedicada.',
+    createCourses: 'Crear cursos',
+    createHelp: 'Tambien podras crear unidades y lecciones desde ese menu.',
+    readOnly:
+      'Tu cuenta esta en modo lectura. Si luego recibe permisos de creador, aqui veras el acceso para administrar cursos.',
+    flow: 'Flujo',
+    flowTitle: 'Como se organiza',
+    flowItems: [
+      'Curso: define el contenido principal.',
+      'Unidad: divide el curso en bloques claros.',
+      'Leccion: agrega video, texto y material de apoyo.',
+    ],
+    catalog: 'Catalogo',
+    availableCourses: 'Cursos disponibles',
+    catalogDescription: 'Abre cualquier curso para ver su estructura completa y avanzar por sus lecciones.',
+    emptyCourses: 'Todavia no hay cursos disponibles para mostrar.',
+    unnamedCourse: 'Curso sin nombre',
+    noDescription: 'Este curso aun no tiene descripcion.',
+    units: 'unidades',
+    lessons: 'lecciones',
+    by: 'Por',
+    quickView: 'Vista rapida',
+    courseStructure: 'Estructura del curso',
+    page: 'Pagina',
+    of: 'de',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    loading: 'Cargando tu espacio de aprendizaje...',
+    errorTitle: 'No pudimos abrir Aprendizaje',
+  },
+  en: {
+    badge: 'Learning',
+    title: 'Explore courses and open content from a much clearer view',
+    description:
+      'Review the full catalog and open any course to browse its units and lessons on a dedicated page.',
+    createCourses: 'Create courses',
+    createHelp: 'You will also be able to create units and lessons from that menu.',
+    readOnly:
+      'Your account is in read-only mode. If it later receives creator permissions, you will see access to manage courses here.',
+    flow: 'Flow',
+    flowTitle: 'How it is organized',
+    flowItems: [
+      'Course: defines the main content.',
+      'Unit: divides the course into clear blocks.',
+      'Lesson: adds video, text and support material.',
+    ],
+    catalog: 'Catalog',
+    availableCourses: 'Available courses',
+    catalogDescription: 'Open any course to see its full structure and move through its lessons.',
+    emptyCourses: 'There are no courses available to show yet.',
+    unnamedCourse: 'Unnamed course',
+    noDescription: 'This course does not have a description yet.',
+    units: 'units',
+    lessons: 'lessons',
+    by: 'By',
+    quickView: 'Quick view',
+    courseStructure: 'Course structure',
+    page: 'Page',
+    of: 'of',
+    previous: 'Previous',
+    next: 'Next',
+    loading: 'Loading your learning space...',
+    errorTitle: 'We could not open Learning',
+  },
+  pt: {
+    badge: 'Aprendizagem',
+    title: 'Explore cursos e acesse o conteudo em uma vista muito mais clara',
+    description:
+      'Revise o catalogo completo e abra qualquer curso para navegar por unidades e aulas em uma pagina dedicada.',
+    createCourses: 'Criar cursos',
+    createHelp: 'Voce tambem podera criar unidades e aulas a partir desse menu.',
+    readOnly:
+      'Sua conta esta em modo leitura. Se receber permissoes de criador depois, voce vera aqui o acesso para administrar cursos.',
+    flow: 'Fluxo',
+    flowTitle: 'Como se organiza',
+    flowItems: [
+      'Curso: define o conteudo principal.',
+      'Unidade: divide o curso em blocos claros.',
+      'Aula: adiciona video, texto e material de apoio.',
+    ],
+    catalog: 'Catalogo',
+    availableCourses: 'Cursos disponiveis',
+    catalogDescription: 'Abra qualquer curso para ver sua estrutura completa e avancar pelas aulas.',
+    emptyCourses: 'Ainda nao ha cursos disponiveis para mostrar.',
+    unnamedCourse: 'Curso sem nome',
+    noDescription: 'Este curso ainda nao tem descricao.',
+    units: 'unidades',
+    lessons: 'aulas',
+    by: 'Por',
+    quickView: 'Vista rapida',
+    courseStructure: 'Estrutura do curso',
+    page: 'Pagina',
+    of: 'de',
+    previous: 'Anterior',
+    next: 'Proxima',
+    loading: 'Carregando seu espaco de aprendizagem...',
+    errorTitle: 'Nao foi possivel abrir Aprendizagem',
+  },
+  fr: {
+    badge: 'Apprentissage',
+    title: 'Explorez les cours et ouvrez le contenu dans une vue beaucoup plus claire',
+    description:
+      'Consultez le catalogue complet et ouvrez n importe quel cours pour parcourir ses unites et lecons dans une page dediee.',
+    createCourses: 'Creer des cours',
+    createHelp: 'Vous pourrez aussi creer des unites et des lecons depuis ce menu.',
+    readOnly:
+      'Votre compte est en mode lecture. S il recoit plus tard des droits de creation, vous verrez ici l acces pour gerer les cours.',
+    flow: 'Flux',
+    flowTitle: 'Organisation',
+    flowItems: [
+      'Cours: definit le contenu principal.',
+      'Unite: divise le cours en blocs clairs.',
+      'Lecon: ajoute video, texte et support.',
+    ],
+    catalog: 'Catalogue',
+    availableCourses: 'Cours disponibles',
+    catalogDescription: 'Ouvrez n importe quel cours pour voir sa structure complete et avancer dans ses lecons.',
+    emptyCourses: 'Aucun cours disponible pour le moment.',
+    unnamedCourse: 'Cours sans nom',
+    noDescription: 'Ce cours n a pas encore de description.',
+    units: 'unites',
+    lessons: 'lecons',
+    by: 'Par',
+    quickView: 'Vue rapide',
+    courseStructure: 'Structure du cours',
+    page: 'Page',
+    of: 'sur',
+    previous: 'Precedent',
+    next: 'Suivant',
+    loading: 'Chargement de votre espace d apprentissage...',
+    errorTitle: 'Impossible d ouvrir Apprentissage',
+  },
+} as const
 
 const getResponseErrorMessage = async (response: Response, fallbackMessage: string) => {
   try {
@@ -129,6 +269,8 @@ const fetchCourses = async () => {
 }
 
 export default function AprendizajeCatalogo() {
+  const { language } = usePreferences()
+  const t = copy[language]
   const userId = getStoredUserId()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [courses, setCourses] = useState<CourseSummary[]>([])
@@ -214,7 +356,7 @@ export default function AprendizajeCatalogo() {
     return (
       <div className="mt-5 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Pagina {currentCatalogPage} de {totalCatalogPages}
+          {t.page} {currentCatalogPage} {t.of} {totalCatalogPages}
         </p>
         <div className="flex gap-2">
           <button
@@ -223,7 +365,7 @@ export default function AprendizajeCatalogo() {
             type="button"
             onClick={() => setCurrentCatalogPage((page) => Math.max(1, page - 1))}
           >
-            Anterior
+            {t.previous}
           </button>
           <button
             className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
@@ -231,7 +373,7 @@ export default function AprendizajeCatalogo() {
             type="button"
             onClick={() => setCurrentCatalogPage((page) => Math.min(totalCatalogPages, page + 1))}
           >
-            Siguiente
+            {t.next}
           </button>
         </div>
       </div>
@@ -246,7 +388,7 @@ export default function AprendizajeCatalogo() {
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-border/70 bg-card/90 p-8 shadow-sm">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <LoaderCircle className="h-4 w-4 animate-spin" />
-              Cargando tu espacio de aprendizaje...
+              {t.loading}
             </div>
           </div>
         </section>
@@ -261,7 +403,7 @@ export default function AprendizajeCatalogo() {
         <Header />
         <section className="px-6 py-14 md:px-12 lg:px-24 xl:px-40">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-accent/25 bg-card/90 p-8 shadow-sm">
-            <h1 className="text-2xl font-semibold tracking-tight">No pudimos abrir Aprendizaje</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t.errorTitle}</h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">{pageError}</p>
           </div>
         </section>
@@ -285,14 +427,13 @@ export default function AprendizajeCatalogo() {
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-3 py-1 text-xs font-medium tracking-[0.24em] text-primary uppercase">
                   <BookOpen className="h-3.5 w-3.5" />
-                  Aprendizaje
+                  {t.badge}
                 </div>
                 <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance md:text-5xl">
-                  Explora los cursos y entra al contenido desde una vista mucho mas clara
+                  {t.title}
                 </h1>
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
-                  Revisa el catalogo completo y abre cualquier curso para navegar sus unidades y
-                  lecciones en una pagina dedicada.
+                  {t.description}
                 </p>
 
                 {canCreateCourses ? (
@@ -302,33 +443,28 @@ export default function AprendizajeCatalogo() {
                       to="/aprendizaje/crear"
                     >
                       <FolderPlus className="h-4 w-4" />
-                      Crear cursos
+                      {t.createCourses}
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                     <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
                       <Sparkles className="h-4 w-4 text-primary" />
-                      Tambien podras crear unidades y lecciones desde ese menu.
+                      {t.createHelp}
                     </span>
                   </div>
                 ) : (
                   <div className="mt-6 inline-flex rounded-[1.5rem] border border-border/70 bg-background/70 px-5 py-4 text-sm leading-6 text-muted-foreground">
-                    Tu cuenta esta en modo lectura. Si luego recibe permisos de creador, aqui veras
-                    el acceso para administrar cursos.
+                    {t.readOnly}
                   </div>
                 )}
               </div>
 
               <aside className="rounded-[1.75rem] border border-border/70 bg-background/75 p-5">
                 <p className="text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase">
-                  Flujo
+                  {t.flow}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight">Como se organiza</h2>
+                <h2 className="mt-2 text-xl font-semibold tracking-tight">{t.flowTitle}</h2>
                 <div className="mt-4 space-y-3">
-                  {[
-                    'Curso: define el contenido principal.',
-                    'Unidad: divide el curso en bloques claros.',
-                    'Leccion: agrega video, texto y material de apoyo.',
-                  ].map((item) => (
+                  {t.flowItems.map((item) => (
                     <div key={item} className="rounded-2xl border border-border/70 bg-card/80 p-4 text-sm text-muted-foreground">
                       {item}
                     </div>
@@ -342,15 +478,15 @@ export default function AprendizajeCatalogo() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase">
-                  Catalogo
+                  {t.catalog}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight">Cursos disponibles</h2>
+                <h2 className="mt-2 text-xl font-semibold tracking-tight">{t.availableCourses}</h2>
               </div>
               {isLoadingCourses ? <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
             </div>
 
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Abre cualquier curso para ver su estructura completa y avanzar por sus lecciones.
+              {t.catalogDescription}
             </p>
 
             {coursesError ? (
@@ -361,7 +497,7 @@ export default function AprendizajeCatalogo() {
 
             {!courses.length && !isLoadingCourses ? (
               <div className="mt-4 rounded-[1.5rem] border border-border/70 bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
-                Todavia no hay cursos disponibles para mostrar.
+                {t.emptyCourses}
               </div>
             ) : (
               <>
@@ -381,21 +517,21 @@ export default function AprendizajeCatalogo() {
                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
                           <div>
                             <p className="text-sm font-semibold text-foreground">
-                              {course.name || 'Curso sin nombre'}
+                              {course.name || t.unnamedCourse}
                             </p>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                              {course.description?.trim() || 'Este curso aun no tiene descripcion.'}
+                              {course.description?.trim() || t.noDescription}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <span className="rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                                {unitCount} unidades
+                                {unitCount} {t.units}
                               </span>
                               <span className="rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                                {lessonCount} lecciones
+                                {lessonCount} {t.lessons}
                               </span>
                               {course.author_username ? (
                                 <span className="rounded-full border border-border/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                                  Por {course.author_username}
+                                  {t.by} {course.author_username}
                                 </span>
                               ) : null}
                             </div>
@@ -405,10 +541,10 @@ export default function AprendizajeCatalogo() {
                             <div className="flex items-center justify-between gap-3 pb-4">
                               <div>
                                 <p className="text-[11px] font-medium tracking-[0.22em] text-muted-foreground uppercase">
-                                  Vista rapida
+                                  {t.quickView}
                                 </p>
                                 <p className="mt-1 text-sm font-semibold text-foreground">
-                                  Estructura del curso
+                                  {t.courseStructure}
                                 </p>
                               </div>
                               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/12 text-primary">
@@ -427,7 +563,7 @@ export default function AprendizajeCatalogo() {
                                   </div>
                                   <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                                     <Layers3 className="h-3.5 w-3.5" />
-                                    Unidades
+                                    {t.units}
                                   </div>
                                 </div>
 
@@ -440,7 +576,7 @@ export default function AprendizajeCatalogo() {
                                   </div>
                                   <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                                     <PlayCircle className="h-3.5 w-3.5" />
-                                    Lecciones
+                                    {t.lessons}
                                   </div>
                                 </div>
                               </div>

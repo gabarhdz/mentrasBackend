@@ -3,32 +3,108 @@ import { motion } from "motion/react";
 
 import { MarqueeStrip } from "@/components/ui/marquee-strip";
 import { Reveal } from "@/components/ui/reveal";
+import { usePreferences } from "@/lib/preferences";
 
-const heroPoints = [
-  {
-    icon: Smartphone,
-    label: "Tu negocio en canales digitales",
+const copy = {
+  es: {
+    eyebrow: "Digitalizacion util para emprendedores que quieren avanzar sin caos",
+    title: "Convierte tu negocio en una operacion digital clara, confiable y lista para crecer.",
+    description:
+      "Mentras ayuda a emprendedores a ordenar su presencia digital, mejorar sus ventas y automatizar lo esencial sin volverse una empresa pesada.",
+    primaryAction: "Entrar para comenzar",
+    secondaryAction: "Ver como funciona",
+    imageAlt: "Profesionales y emprendedores usando Mentras",
+    points: [
+      "Tu negocio en canales digitales",
+      "Procesos simples para vender mejor",
+      "Acompanamiento cercano y claro",
+    ],
+    marquee: [
+      "Diagnostico digital",
+      "Catalogo online",
+      "Automatizacion ligera",
+      "WhatsApp y CRM",
+      "Cobros y seguimiento",
+      "Presencia profesional",
+    ],
   },
-  {
-    icon: ChartSpline,
-    label: "Procesos simples para vender mejor",
+  en: {
+    eyebrow: "Useful digitalization for founders who want progress without chaos",
+    title: "Turn your business into a clear, reliable digital operation ready to grow.",
+    description:
+      "Mentras helps founders organize their digital presence, improve sales, and automate the essentials without becoming a heavy company.",
+    primaryAction: "Enter to start",
+    secondaryAction: "See how it works",
+    imageAlt: "Professionals and founders using Mentras",
+    points: [
+      "Your business across digital channels",
+      "Simple processes to sell better",
+      "Close and clear guidance",
+    ],
+    marquee: [
+      "Digital diagnosis",
+      "Online catalog",
+      "Light automation",
+      "WhatsApp and CRM",
+      "Payments and follow-up",
+      "Professional presence",
+    ],
   },
-  {
-    icon: BadgeCheck,
-    label: "Acompanamiento cercano y claro",
+  pt: {
+    eyebrow: "Digitalizacao util para empreendedores que querem avancar sem caos",
+    title: "Transforme seu negocio em uma operacao digital clara, confiavel e pronta para crescer.",
+    description:
+      "A Mentras ajuda empreendedores a organizar sua presenca digital, melhorar vendas e automatizar o essencial sem virar uma empresa pesada.",
+    primaryAction: "Entrar para comecar",
+    secondaryAction: "Ver como funciona",
+    imageAlt: "Profissionais e empreendedores usando Mentras",
+    points: [
+      "Seu negocio em canais digitais",
+      "Processos simples para vender melhor",
+      "Acompanhamento proximo e claro",
+    ],
+    marquee: [
+      "Diagnostico digital",
+      "Catalogo online",
+      "Automacao leve",
+      "WhatsApp e CRM",
+      "Pagamentos e acompanhamento",
+      "Presenca profissional",
+    ],
   },
-];
-
-const marqueeItems = [
-  "Diagnostico digital",
-  "Catalogo online",
-  "Automatizacion ligera",
-  "WhatsApp y CRM",
-  "Cobros y seguimiento",
-  "Presencia profesional",
-];
+  fr: {
+    eyebrow: "Numerisation utile pour entrepreneurs qui veulent avancer sans chaos",
+    title: "Transformez votre entreprise en operation numerique claire, fiable et prete a grandir.",
+    description:
+      "Mentras aide les entrepreneurs a organiser leur presence numerique, ameliorer leurs ventes et automatiser l'essentiel sans alourdir l'entreprise.",
+    primaryAction: "Entrer pour commencer",
+    secondaryAction: "Voir le fonctionnement",
+    imageAlt: "Professionnels et entrepreneurs utilisant Mentras",
+    points: [
+      "Votre entreprise sur les canaux numeriques",
+      "Des processus simples pour mieux vendre",
+      "Un accompagnement proche et clair",
+    ],
+    marquee: [
+      "Diagnostic numerique",
+      "Catalogue en ligne",
+      "Automatisation legere",
+      "WhatsApp et CRM",
+      "Paiements et suivi",
+      "Presence professionnelle",
+    ],
+  },
+} as const;
 
 export function HeroSection() {
+  const { language } = usePreferences();
+  const t = copy[language];
+  const heroPoints = [
+    { icon: Smartphone, label: t.points[0] },
+    { icon: ChartSpline, label: t.points[1] },
+    { icon: BadgeCheck, label: t.points[2] },
+  ];
+
   return (
     <section className="relative overflow-hidden px-6 pb-16 pt-6 sm:pb-24 sm:pt-10">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--secondary)_28%,transparent),transparent_46%),radial-gradient(circle_at_80%_10%,_color-mix(in_oklab,var(--primary)_18%,transparent),transparent_42%),linear-gradient(to_bottom,_color-mix(in_oklab,var(--background)_30%,transparent),transparent_100%)] [mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_68%,transparent_100%)]" />
@@ -45,16 +121,14 @@ export function HeroSection() {
           <Reveal className="space-y-8">
             <div className="space-y-6">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                Digitalizacion util para emprendedores que quieren avanzar sin caos
+                {t.eyebrow}
               </span>
               <div className="space-y-4">
                 <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-balance sm:text-6xl">
-                  Convierte tu negocio en una operacion digital clara, confiable y
-                  lista para crecer.
+                  {t.title}
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
-                  Mentras ayuda a emprendedores a ordenar su presencia digital, mejorar
-                  sus ventas y automatizar lo esencial sin volverse una empresa pesada.
+                  {t.description}
                 </p>
               </div>
             </div>
@@ -64,14 +138,14 @@ export function HeroSection() {
                 href="/auth"
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
               >
-                Entrar para comenzar
+                {t.primaryAction}
                 <ArrowRight className="size-4" />
               </a>
               <a
                 href="#servicios"
                 className="inline-flex items-center rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
               >
-                Ver como funciona
+                {t.secondaryAction}
               </a>
             </div>
 
@@ -107,7 +181,7 @@ export function HeroSection() {
                 <div className="relative z-10 h-[18rem] overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_76%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_76%,transparent_100%)] sm:h-[24rem] lg:h-[32rem]">
                   <img
                     src="/SMEs_owner_landing.png"
-                    alt="Profesionales y emprendedores usando Mentras"
+                    alt={t.imageAlt}
                     className="absolute bottom-0 left-1/2 h-auto w-[155%] max-w-none -translate-x-[45%] object-contain drop-shadow-[0_34px_60px_rgba(4,24,25,0.18)] [clip-path:inset(0_0_0_6%)] sm:w-[165%] sm:-translate-x-[45%] lg:w-[205%] lg:-translate-x-[46.5%] xl:w-[220%] xl:-translate-x-[47%]"
                   />
                 </div>
@@ -117,7 +191,7 @@ export function HeroSection() {
         </div>
 
         <Reveal delay={0.18} className="mt-10">
-          <MarqueeStrip items={marqueeItems} />
+          <MarqueeStrip items={[...t.marquee]} />
         </Reveal>
       </div>
     </section>

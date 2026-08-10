@@ -10,6 +10,7 @@ import type { CourseDetail } from '@/components/learning/course-learning-types'
 import Footer from '@/components/ui/Footer'
 import Header from '@/components/ui/Header'
 import { authFetch, clearAuthTokens, hasStoredSession } from '@/lib/auth'
+import { usePreferences } from '@/lib/preferences'
 import { buildBackendUrl } from '@/lib/utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -58,7 +59,32 @@ const redirectToAuth = () => {
   window.location.href = '/auth'
 }
 
+const copy = {
+  es: {
+    loading: 'Cargando el curso...',
+    errorTitle: 'No pudimos abrir el curso',
+    back: 'Volver a Aprendizaje',
+  },
+  en: {
+    loading: 'Loading the course...',
+    errorTitle: 'We could not open the course',
+    back: 'Back to Learning',
+  },
+  pt: {
+    loading: 'Carregando o curso...',
+    errorTitle: 'Nao foi possivel abrir o curso',
+    back: 'Voltar para Aprendizagem',
+  },
+  fr: {
+    loading: 'Chargement du cours...',
+    errorTitle: 'Impossible d ouvrir le cours',
+    back: 'Retour a l apprentissage',
+  },
+} as const
+
 export default function CursoAprendizaje() {
+  const { language } = usePreferences()
+  const t = copy[language]
   const { courseId } = useParams()
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [selectedLessonId, setSelectedLessonId] = useState('')
@@ -123,7 +149,7 @@ export default function CursoAprendizaje() {
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-border/70 bg-card/90 p-8 shadow-sm">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <LoaderCircle className="h-4 w-4 animate-spin" />
-              Cargando el curso...
+              {t.loading}
             </div>
           </div>
         </section>
@@ -138,14 +164,14 @@ export default function CursoAprendizaje() {
         <Header />
         <section className="px-6 py-14 md:px-12 lg:px-24 xl:px-40">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-accent/25 bg-card/90 p-8 shadow-sm">
-            <h1 className="text-2xl font-semibold tracking-tight">No pudimos abrir el curso</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t.errorTitle}</h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">{pageError}</p>
             <Link
               className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
               to="/aprendizaje"
             >
               <ArrowLeft className="h-4 w-4" />
-              Volver a Aprendizaje
+              {t.back}
             </Link>
           </div>
         </section>
@@ -166,7 +192,7 @@ export default function CursoAprendizaje() {
             to="/aprendizaje"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver a Aprendizaje
+            {t.back}
           </Link>
 
           <CourseHeroCard course={course} totalLessons={totalLessons} unitCount={units.length} />

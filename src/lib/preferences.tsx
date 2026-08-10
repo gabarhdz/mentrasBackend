@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
+import { startUiTranslationObserver } from '@/lib/ui-translations'
 
 export type Language = 'es' | 'en' | 'pt' | 'fr'
 export type Theme = 'light' | 'dark'
@@ -28,6 +29,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(LANGUAGE_KEY, language)
     document.documentElement.lang = language
   }, [language])
+
+  useEffect(() => startUiTranslationObserver(language), [language])
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme)
