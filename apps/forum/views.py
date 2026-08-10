@@ -120,25 +120,65 @@ class JoinForum(APIView):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
+class LeaveForum(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id, *args, **kwargs):
+        try:
+            forum = Forum.objects.get(id=id)
+        except Forum.DoesNotExist:
+            return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        forum_user = ForumUser.objects.filter(
+            forum=forum,
+            user=request.user,
+        ).first()
+        if forum_user is None:
+            return Response({'error': 'You are not a member of this forum'}, status=status.HTTP_400_BAD_REQUEST)
+
+        forum_user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class ForumJoinRequests(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if not request.user.is_admin:
+        if request.user.is_admin:
+            requests = ForumJoinRequest.objects.filter(
+                status=ForumJoinRequest.PENDING,
+            ).order_by('-created_at')
+        else:
+            admin_forums = ForumUser.objects.filter(
+                user=request.user,
+                isAdmin=True,
+            ).values('forum_id')
+            requests = ForumJoinRequest.objects.filter(
+                forum_id__in=admin_forums,
+                status=ForumJoinRequest.PENDING,
+            ).order_by('-created_at')
+
+        if not requests.exists() and not request.user.is_admin and not ForumUser.objects.filter(
+            user=request.user,
+            isAdmin=True,
+        ).exists():
             return Response({'error': 'You do not have permission to review join requests'}, status=status.HTTP_403_FORBIDDEN)
 
-        requests = ForumJoinRequest.objects.filter(status=ForumJoinRequest.PENDING).order_by('-created_at')
         serializer = ForumJoinRequestSerializer(requests, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, id, *args, **kwargs):
-        if not request.user.is_admin:
-            return Response({'error': 'You do not have permission to review join requests'}, status=status.HTTP_403_FORBIDDEN)
-
         try:
             join_request = ForumJoinRequest.objects.get(id=id, status=ForumJoinRequest.PENDING)
         except ForumJoinRequest.DoesNotExist:
             return Response({'error': 'Join request not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        is_forum_admin = ForumUser.objects.filter(
+            forum=join_request.forum,
+            user=request.user,
+            isAdmin=True,
+        ).exists()
+        if not request.user.is_admin and not is_forum_admin:
+            return Response({'error': 'You do not have permission to review join requests'}, status=status.HTTP_403_FORBIDDEN)
 
         decision = request.data.get('status')
         if decision not in [ForumJoinRequest.APPROVED, ForumJoinRequest.REJECTED]:
@@ -170,8 +210,17 @@ class AllPost(APIView):
         except Forum.DoesNotExist:
             return Response({'error': 'Forum not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication is required to create a post'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not ForumUser.objects.filter(forum=forum, user=request.user).exists():
+            return Response(
+                {'error': 'You must be a member of the forum to create a post'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = PostSerializer(data=data, context={'request': request})
-        if serializer.is_valid() and request.user.is_authenticated:
+        if serializer.is_valid():
             post = serializer.save(forum=forum)
             response_serializer = PostSerializer(post, context={'request': request})
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
