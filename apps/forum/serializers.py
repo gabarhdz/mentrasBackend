@@ -10,6 +10,9 @@ class ForumSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         profile_pic_file = validated_data.pop("profile_pic", None)
+        request = self.context.get('request')
+        if request is not None and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
         forum = Forum.objects.create(**validated_data)
 
         if profile_pic_file:
@@ -43,8 +46,8 @@ class ForumSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Forum
-        fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'name', 'description', 'profile_pic', 'is_private', 'created_at', 'created_by']
+        read_only_fields = ['id', 'created_at', 'created_by']
     def validate_name(self, value):
         if profanity.contains_profanity(value):
             raise serializers.ValidationError("Inappropriate content detected in the forum name.")

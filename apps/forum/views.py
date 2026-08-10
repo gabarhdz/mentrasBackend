@@ -19,12 +19,6 @@ class AllForums(APIView):
         serializer = ForumSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             forum = serializer.save()
-            if request.user.is_authenticated:
-                ForumUser.objects.update_or_create(
-                    forum=forum,
-                    user=request.user,
-                    defaults={'isAdmin': True},
-                )
             response_serializer = ForumSerializer(forum, context={'request': request})
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -137,6 +131,11 @@ class LeaveForum(APIView):
             return Response({'error': 'You are not a member of this forum'}, status=status.HTTP_400_BAD_REQUEST)
 
         forum_user.delete()
+        ForumJoinRequest.objects.filter(
+            forum=forum,
+            user=request.user,
+            status=ForumJoinRequest.APPROVED,
+        ).update(status=ForumJoinRequest.REJECTED)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ForumJoinRequests(APIView):
