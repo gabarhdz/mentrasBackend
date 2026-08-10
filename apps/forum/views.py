@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Forum, ForumJoinRequest, ForumUser, Post
+from .moderation import ModerationServiceError, post_contains_profanity
 from .serializers import ForumJoinRequestSerializer, ForumSerializer, PostSerializer
 
 
@@ -220,6 +221,30 @@ class AllPost(APIView):
 
         serializer = PostSerializer(data=data, context={'request': request})
         if serializer.is_valid():
+            try:
+                if post_contains_profanity(
+                    serializer.validated_data['title'],
+                    serializer.validated_data['text'],
+                ):
+                    return Response(
+                        {'error': 'The post contains inappropriate language'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except ModerationServiceError as exc:
+                if exc.error_code == 'rate_limit':
+                    error = 'Post moderation service is temporarily busy'
+                elif exc.error_code == 'configuration':
+                    error = 'Post moderation service is misconfigured'
+                elif exc.error_code == 'timeout':
+                    error = 'Post moderation service timed out'
+                else:
+                    error = 'Post moderation service is unavailable'
+
+                return Response(
+                    {'error': error},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
             post = serializer.save(forum=forum)
             response_serializer = PostSerializer(post, context={'request': request})
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
