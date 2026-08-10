@@ -230,9 +230,18 @@ class AllPost(APIView):
                         {'error': 'The post contains inappropriate language'},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-            except ModerationServiceError:
+            except ModerationServiceError as exc:
+                if exc.error_code == 'rate_limit':
+                    error = 'Post moderation service is temporarily busy'
+                elif exc.error_code == 'configuration':
+                    error = 'Post moderation service is misconfigured'
+                elif exc.error_code == 'timeout':
+                    error = 'Post moderation service timed out'
+                else:
+                    error = 'Post moderation service is unavailable'
+
                 return Response(
-                    {'error': 'Post moderation service is unavailable'},
+                    {'error': error},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
