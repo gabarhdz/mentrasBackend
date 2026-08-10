@@ -30,6 +30,12 @@ type ForumSidebarProps = {
   onCreateForum: (payload: CreateForumPayload) => Promise<void>
   onEditForum: (forumId: string, payload: Omit<CreateForumPayload, 'profilePicFile'>) => Promise<void>
   onDeleteForum: (forumId: string) => Promise<void>
+  selectedForum: { id: string; name: string; isPrivate: boolean; isMember: boolean } | null
+  isJoiningForum: boolean
+  joinMessage: string | null
+  onJoinForum: () => Promise<void>
+  joinRequests: { id?: string; forum_id?: string; user?: { username?: string }; status?: string }[]
+  onJoinDecision: (requestId: string, status: 'approved' | 'rejected') => Promise<void>
 }
 
 const getInitials = (value: string) =>
@@ -53,6 +59,12 @@ export function ForumSidebar({
   onCreateForum,
   onEditForum,
   onDeleteForum,
+  selectedForum,
+  isJoiningForum,
+  joinMessage,
+  onJoinForum,
+  joinRequests,
+  onJoinDecision,
 }: ForumSidebarProps) {
   const [isCreateExpanded, setIsCreateExpanded] = useState(false)
   const [forumName, setForumName] = useState('')
@@ -310,6 +322,25 @@ export function ForumSidebar({
             )
           })}
         </div>
+
+        {selectedForum && !selectedForum.isMember ? (
+          <div className="mt-4 rounded-[1.35rem] border border-primary/20 bg-primary/7 p-4">
+            <p className="text-sm font-semibold text-foreground">{selectedForum.isPrivate ? 'Acceso privado' : 'Unirse al foro'}</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{selectedForum.isPrivate ? 'Envía una solicitud para que un administrador del sistema la revise.' : 'Puedes unirte inmediatamente a esta comunidad pública.'}</p>
+            <button type="button" disabled={isJoiningForum} onClick={() => void onJoinForum()} className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
+              {isJoiningForum ? <LoaderCircle className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {selectedForum.isPrivate ? 'Solicitar acceso' : 'Unirme al foro'}
+            </button>
+            {joinMessage ? <p className="mt-3 text-sm text-primary">{joinMessage}</p> : null}
+          </div>
+        ) : null}
+
+        {joinRequests.length > 0 ? (
+          <div className="mt-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
+            <p className="text-sm font-semibold text-foreground">Solicitudes pendientes</p>
+            <div className="mt-3 space-y-3">{joinRequests.map((request) => request.id ? <div key={request.id} className="rounded-xl border border-border/70 p-3 text-sm"><p className="font-medium">{request.user?.username || 'Usuario'}</p><div className="mt-2 flex gap-2"><button type="button" onClick={() => void onJoinDecision(request.id!, 'approved')} className="rounded-full bg-primary px-3 py-1.5 text-primary-foreground">Aprobar</button><button type="button" onClick={() => void onJoinDecision(request.id!, 'rejected')} className="rounded-full border border-destructive/30 px-3 py-1.5 text-destructive">Rechazar</button></div></div> : null)}</div>
+          </div>
+        ) : null}
 
         {activeForum?.isAdmin ? (
           <div className="mt-4">

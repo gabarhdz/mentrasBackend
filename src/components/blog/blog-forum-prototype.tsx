@@ -40,6 +40,9 @@ type ApiPostRecord = {
   user?: ApiPostUser | null
 }
 
+type ApiUserProfile = { is_admin?: boolean }
+type ApiJoinRequest = { id?: string; forum_id?: string; user?: ApiPostUser; status?: 'pending' | 'approved' | 'rejected'; created_at?: string }
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
@@ -359,6 +362,25 @@ const removeForum = async (forumId: string) => {
   }
 }
 
+const joinForum = async (forumId: string) => {
+  const response = await authFetch(buildBackendUrl(`/api/forum/${forumId}/join/`), { method: 'POST' })
+  if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'No se pudo solicitar acceso al foro.'))
+  return response.json() as Promise<{ message?: string; status?: 'pending' | 'approved' | 'rejected' }>
+}
+
+const fetchJoinRequests = async () => {
+  const response = await authFetch(buildBackendUrl('/api/forum/join-requests/'))
+  if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'No se pudieron cargar las solicitudes.'))
+  return toForumArray(await response.json()) as unknown as ApiJoinRequest[]
+}
+
+const decideJoinRequest = async (requestId: string, status: 'approved' | 'rejected') => {
+  const response = await authFetch(buildBackendUrl(`/api/forum/join-requests/${requestId}/`), {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }),
+  })
+  if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'No se pudo actualizar la solicitud.'))
+}
+
 export function BlogForumPrototype() {
   const userId = getStoredUserId()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -375,6 +397,10 @@ export function BlogForumPrototype() {
   const [isCreatingForum, setIsCreatingForum] = useState(false)
   const [isDeletingPostId, setIsDeletingPostId] = useState<string | null>(null)
   const [managedForumIds, setManagedForumIds] = useState<string[]>([])
+  const [isJoiningForum, setIsJoiningForum] = useState(false)
+  const [joinMessage, setJoinMessage] = useState<string | null>(null)
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false)
+  const [joinRequests, setJoinRequests] = useState<ApiJoinRequest[]>([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -399,6 +425,18 @@ export function BlogForumPrototype() {
 
     void loadData()
   }, [])
+
+  useEffect(() => {
+    if (!userId || !hasStoredSession()) return
+    void authFetch(buildBackendUrl(`/api/user/${userId}/`)).then(async (response) => {
+      if (response.ok) setIsGlobalAdmin(Boolean((await response.json() as ApiUserProfile).is_admin))
+    })
+  }, [userId])
+
+  useEffect(() => {
+    if (!isGlobalAdmin) return
+    void fetchJoinRequests().then(setJoinRequests).catch(() => undefined)
+  }, [isGlobalAdmin])
 
   const selectedForumId = searchParams.get('forum')
   const activeForum =
@@ -569,6 +607,27 @@ export function BlogForumPrototype() {
     }
   }
 
+  const handleJoinForum = async () => {
+    if (!activeForum) return
+    if (!hasStoredSession()) { setJoinMessage('Necesitas iniciar sesion para unirte a un foro.'); return }
+    try {
+      setIsJoiningForum(true); setJoinMessage(null)
+      const result = await joinForum(activeForum.id)
+      if (activeForum.isPrivate) {
+        setJoinMessage(result.status === 'pending' ? 'Solicitud enviada. Espera la aprobación de un administrador.' : 'Tu solicitud ya está en revisión.')
+      } else {
+        setForums((current) => current.map((forum) => forum.id === activeForum.id ? { ...forum, isMember: true } : forum))
+        setJoinMessage('Ya eres miembro de este foro.')
+      }
+    } catch (error) { setJoinMessage(error instanceof Error ? error.message : 'No se pudo procesar tu acceso al foro.') }
+    finally { setIsJoiningForum(false) }
+  }
+
+  const handleJoinDecision = async (requestId: string, status: 'approved' | 'rejected') => {
+    try { await decideJoinRequest(requestId, status); setJoinRequests((current) => current.filter((request) => request.id !== requestId)) }
+    catch (error) { setPageError(error instanceof Error ? error.message : 'No se pudo actualizar la solicitud.') }
+  }
+
   if (pageError && forums.length === 0 && posts.length === 0) {
     return (
       <section className="rounded-[2rem] border border-destructive/20 bg-card p-6 shadow-sm">
@@ -611,6 +670,12 @@ export function BlogForumPrototype() {
           onEditForum={handleEditForum}
           onDeleteForum={handleDeleteForum}
           onSelectForum={handleSelectForum}
+          selectedForum={activeForum}
+          isJoiningForum={isJoiningForum}
+          joinMessage={joinMessage}
+          onJoinForum={handleJoinForum}
+          joinRequests={isGlobalAdmin ? joinRequests : []}
+          onJoinDecision={handleJoinDecision}
         />
 
         <ForumFeed
