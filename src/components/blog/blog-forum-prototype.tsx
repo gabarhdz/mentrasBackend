@@ -326,15 +326,15 @@ const createForumPost = async (forumId: string, payload: ForumComposerPayload) =
   return normalizePost({ ...data, forum_id: forumId }, 0)
 }
 
-const updateForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean }) => {
+const updateForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean; profilePicFile: File | null }) => {
+  const formData = new FormData()
+  formData.append('name', payload.name)
+  formData.append('description', payload.description)
+  formData.append('is_private', payload.isPrivate ? 'true' : 'false')
+  if (payload.profilePicFile) formData.append('profile_pic', payload.profilePicFile)
   const response = await authFetch(buildBackendUrl(`/api/forum/${forumId}/`), {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: payload.name,
-      description: payload.description,
-      is_private: payload.isPrivate,
-    }),
+    body: formData,
   })
 
   if (!response.ok) {
@@ -367,6 +367,11 @@ const joinForum = async (forumId: string) => {
   return response.json() as Promise<{ message?: string; status?: 'pending' | 'approved' | 'rejected' }>
 }
 
+const leaveForum = async (forumId: string) => {
+  const response = await authFetch(buildBackendUrl(`/api/forum/${forumId}/leave/`), { method: 'DELETE' })
+  if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'No se pudo salir del foro.'))
+}
+
 const fetchJoinRequests = async () => {
   const response = await authFetch(buildBackendUrl('/api/forum/join-requests/'))
   if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'No se pudieron cargar las solicitudes.'))
@@ -397,6 +402,7 @@ export function BlogForumPrototype() {
   const [isDeletingPostId, setIsDeletingPostId] = useState<string | null>(null)
   const [managedForumIds, setManagedForumIds] = useState<string[]>([])
   const [isJoiningForum, setIsJoiningForum] = useState(false)
+  const [isLeavingForum, setIsLeavingForum] = useState(false)
   const [joinMessage, setJoinMessage] = useState<string | null>(null)
   const [joinRequests, setJoinRequests] = useState<ApiJoinRequest[]>([])
 
@@ -523,7 +529,7 @@ export function BlogForumPrototype() {
     }
   }
 
-  const handleEditForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean }) => {
+  const handleEditForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean; profilePicFile: File | null }) => {
     try {
       const updatedForum = await updateForum(forumId, payload)
       setForums((current) => current.map((forum) => (forum.id === forumId ? { ...forum, ...updatedForum } : forum)))
@@ -616,13 +622,36 @@ export function BlogForumPrototype() {
         setForums((current) => current.map((forum) => forum.id === activeForum.id ? { ...forum, isMember: true } : forum))
         setJoinMessage('Ya eres miembro de este foro.')
       }
-    } catch (error) { setJoinMessage(error instanceof Error ? error.message : 'No se pudo procesar tu acceso al foro.') }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo procesar tu acceso al foro.'
+      // The current API reports an existing membership as HTTP 400 instead of
+      // returning it in the forum list. Treat that response as the confirmed
+      // membership it represents, so existing members can publish right away.
+      if (/already a member|ya eres miembro/i.test(message)) {
+        setForums((current) => current.map((forum) => forum.id === activeForum.id ? { ...forum, isMember: true } : forum))
+        setJoinMessage('Ya eres miembro de este foro.')
+      } else {
+        setJoinMessage(message)
+      }
+    }
     finally { setIsJoiningForum(false) }
   }
 
   const handleJoinDecision = async (requestId: string, status: 'approved' | 'rejected') => {
     try { await decideJoinRequest(requestId, status); setJoinRequests((current) => current.filter((request) => request.id !== requestId)) }
     catch (error) { setPageError(error instanceof Error ? error.message : 'No se pudo actualizar la solicitud.') }
+  }
+
+  const handleLeaveForum = async () => {
+    if (!activeForum || !window.confirm(`¿Salir de ${activeForum.name}? Dejarás de poder publicar en este foro.`)) return
+    try {
+      setIsLeavingForum(true)
+      await leaveForum(activeForum.id)
+      setForums((current) => current.map((forum) => forum.id === activeForum.id ? { ...forum, isMember: false, isAdmin: false } : forum))
+      setJoinMessage('Saliste del foro.')
+    } catch (error) {
+      setJoinMessage(error instanceof Error ? error.message : 'No se pudo salir del foro.')
+    } finally { setIsLeavingForum(false) }
   }
 
   if (pageError && forums.length === 0 && posts.length === 0) {
@@ -673,6 +702,8 @@ export function BlogForumPrototype() {
           onJoinForum={handleJoinForum}
           joinRequests={joinRequests}
           onJoinDecision={handleJoinDecision}
+          onLeaveForum={handleLeaveForum}
+          isLeavingForum={isLeavingForum}
         />
 
         <ForumFeed

@@ -28,7 +28,7 @@ type ForumSidebarProps = {
   createForumSuccessMessage?: string | null
   onSelectForum: (forumId: string) => void
   onCreateForum: (payload: CreateForumPayload) => Promise<void>
-  onEditForum: (forumId: string, payload: Omit<CreateForumPayload, 'profilePicFile'>) => Promise<void>
+  onEditForum: (forumId: string, payload: CreateForumPayload) => Promise<void>
   onDeleteForum: (forumId: string) => Promise<void>
   selectedForum: { id: string; name: string; isPrivate: boolean; isMember: boolean } | null
   isJoiningForum: boolean
@@ -36,6 +36,8 @@ type ForumSidebarProps = {
   onJoinForum: () => Promise<void>
   joinRequests: { id?: string; forum_id?: string; user?: { username?: string }; status?: string }[]
   onJoinDecision: (requestId: string, status: 'approved' | 'rejected') => Promise<void>
+  onLeaveForum: () => Promise<void>
+  isLeavingForum: boolean
 }
 
 const getInitials = (value: string) =>
@@ -65,6 +67,8 @@ export function ForumSidebar({
   onJoinForum,
   joinRequests,
   onJoinDecision,
+  onLeaveForum,
+  isLeavingForum,
 }: ForumSidebarProps) {
   const [isCreateExpanded, setIsCreateExpanded] = useState(false)
   const [forumName, setForumName] = useState('')
@@ -76,11 +80,17 @@ export function ForumSidebar({
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editIsPrivate, setEditIsPrivate] = useState(false)
+  const [editProfilePicFile, setEditProfilePicFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const editFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const profilePicPreviewUrl = useMemo(
     () => (profilePicFile ? URL.createObjectURL(profilePicFile) : null),
     [profilePicFile],
+  )
+  const editProfilePicPreviewUrl = useMemo(
+    () => (editProfilePicFile ? URL.createObjectURL(editProfilePicFile) : null),
+    [editProfilePicFile],
   )
 
   useEffect(() => {
@@ -90,6 +100,10 @@ export function ForumSidebar({
       }
     }
   }, [profilePicPreviewUrl])
+
+  useEffect(() => () => {
+    if (editProfilePicPreviewUrl) URL.revokeObjectURL(editProfilePicPreviewUrl)
+  }, [editProfilePicPreviewUrl])
 
   useEffect(() => {
     if (!createForumSuccessMessage) {
@@ -126,6 +140,7 @@ export function ForumSidebar({
       name: editName.trim(),
       description: editDescription.trim(),
       isPrivate: editIsPrivate,
+      profilePicFile: editProfilePicFile,
     })
     setIsEditExpanded(false)
   }
@@ -335,6 +350,16 @@ export function ForumSidebar({
           </div>
         ) : null}
 
+        {selectedForum?.isMember ? (
+          <div className="mt-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
+            <p className="text-sm font-semibold text-foreground">Ya eres miembro</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Puedes dejar esta comunidad cuando quieras.</p>
+            <button type="button" disabled={isLeavingForum} onClick={() => void onLeaveForum()} className="mt-3 inline-flex items-center gap-2 rounded-full border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive disabled:opacity-60">
+              {isLeavingForum ? <LoaderCircle className="size-4 animate-spin" /> : null} Salir del foro
+            </button>
+          </div>
+        ) : null}
+
         {joinRequests.length > 0 ? (
           <div className="mt-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4">
             <p className="text-sm font-semibold text-foreground">Solicitudes pendientes</p>
@@ -351,6 +376,7 @@ export function ForumSidebar({
                 setEditName(activeForum.name)
                 setEditDescription(activeForum.description)
                 setEditIsPrivate(activeForum.isPrivate)
+                setEditProfilePicFile(null)
                 setIsEditExpanded((current) => !current)
               }}
             >
@@ -374,6 +400,11 @@ export function ForumSidebar({
                   <input checked={editIsPrivate} type="checkbox" onChange={(event) => setEditIsPrivate(event.target.checked)} />
                   Foro privado
                 </label>
+                <div className="rounded-[1rem] border border-dashed border-border/80 bg-card p-3">
+                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-foreground">Foto de perfil del foro</p><button type="button" className="rounded-full border border-border/70 bg-background px-3 py-2 text-sm" onClick={() => editFileInputRef.current?.click()}>Cambiar imagen</button></div>
+                  <input ref={editFileInputRef} accept="image/*" className="hidden" type="file" onChange={(event) => setEditProfilePicFile(event.target.files?.[0] ?? null)} />
+                  {editProfilePicPreviewUrl || activeForum.profilePic ? <img src={editProfilePicPreviewUrl || activeForum.profilePic} alt="Vista previa del foro" className="mt-3 aspect-[16/9] w-full rounded-[1rem] object-cover" /> : null}
+                </div>
                 <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
                   <Save className="size-4" /> Guardar cambios
                 </button>
