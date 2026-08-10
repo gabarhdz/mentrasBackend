@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next'
 import { translationCatalog } from '@/lib/ui-translations'
 import sharedMessages from './shared'
 
-export const supportedLanguages = ['es', 'en', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ja', 'ar', 'hi', 'nl'] as const
+export const supportedLanguages = ['es', 'en', 'pt', 'fr', 'de', 'it', 'nl'] as const
 export type AppLanguage = (typeof supportedLanguages)[number]
 
 export const LANGUAGE_STORAGE_KEY = 'mentras.language'

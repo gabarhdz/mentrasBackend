@@ -1,11 +1,11 @@
-import { Check, Globe2, Moon, Sun } from 'lucide-react'
+import { Bell, Check, Globe2, LockKeyhole, Moon, PanelTop, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import Header from '@/components/ui/Header'
 import { languageOptions, type Theme, usePreferences } from '@/lib/preferences'
 
 const Settings = () => {
-  const { language, setLanguage, theme, setTheme } = usePreferences()
+  const { language, setLanguage, theme, setTheme, emailNotifications, setEmailNotifications, privateProfile, setPrivateProfile, compactMode, setCompactMode } = usePreferences()
   const { t } = useTranslation()
   const optionClass = (active: boolean) =>
     `flex items-center justify-between rounded-2xl border p-4 text-left transition ${
@@ -13,6 +13,7 @@ const Settings = () => {
         ? 'border-primary bg-primary/10 text-foreground'
         : 'border-border/70 bg-background/70 text-muted-foreground hover:border-primary/30'
     }`
+  const toggleClass = (enabled: boolean) => `relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${enabled ? 'bg-primary' : 'bg-muted'}`
 
   return (
     <div className="min-h-screen text-foreground">
@@ -50,6 +51,21 @@ const Settings = () => {
                   {theme === value ? <Check className="size-5 text-primary" /> : null}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="mt-8 border-t border-border/70 pt-8">
+            <div className="space-y-3">
+              {[
+                [Bell, 'Notificaciones por correo', 'Recibe avisos sobre actividad importante en tu cuenta.', emailNotifications, setEmailNotifications],
+                [LockKeyhole, 'Perfil privado', 'Limita la visibilidad de la información de tu perfil.', privateProfile, setPrivateProfile],
+                [PanelTop, 'Vista compacta', 'Reduce ligeramente el tamaño de la interfaz.', compactMode, setCompactMode],
+              ].map(([Icon, title, description, enabled, setEnabled]) => {
+                const PreferenceIcon = Icon as typeof Bell
+                const isEnabled = enabled as boolean
+                const update = setEnabled as (next: boolean) => void
+                return <div key={title as string} className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-background/70 p-4"><div className="flex gap-3"><PreferenceIcon className="mt-0.5 size-5 shrink-0 text-primary" /><div><h2 className="font-semibold">{title as string}</h2><p className="mt-1 text-sm text-muted-foreground">{description as string}</p></div></div><button type="button" role="switch" aria-checked={isEnabled} aria-label={title as string} onClick={() => update(!isEnabled)} className={toggleClass(isEnabled)}><span className={`absolute top-1 size-5 rounded-full bg-white shadow transition ${isEnabled ? 'left-6' : 'left-1'}`} /></button></div>
+              })}
             </div>
           </section>
         </div>

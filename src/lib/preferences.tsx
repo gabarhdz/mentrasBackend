@@ -12,11 +12,6 @@ export const languageOptions = [
   { value: 'fr', flag: '🇫🇷', shortLabel: 'FR', label: 'Français' },
   { value: 'de', flag: '🇩🇪', shortLabel: 'DE', label: 'Deutsch' },
   { value: 'it', flag: '🇮🇹', shortLabel: 'IT', label: 'Italiano' },
-  { value: 'ru', flag: '🇷🇺', shortLabel: 'RU', label: 'Русский' },
-  { value: 'zh', flag: '🇨🇳', shortLabel: 'ZH', label: '中文' },
-  { value: 'ja', flag: '🇯🇵', shortLabel: 'JA', label: '日本語' },
-  { value: 'ar', flag: '🇸🇦', shortLabel: 'AR', label: 'العربية' },
-  { value: 'hi', flag: '🇮🇳', shortLabel: 'HI', label: 'हिन्दी' },
   { value: 'nl', flag: '🇳🇱', shortLabel: 'NL', label: 'Nederlands' },
 ] as const satisfies readonly { value: Language; flag: string; shortLabel: string; label: string }[]
 
@@ -25,11 +20,24 @@ type PreferencesContextValue = {
   setLanguage: (language: Language) => void
   theme: Theme
   setTheme: (theme: Theme) => void
+  emailNotifications: boolean
+  setEmailNotifications: (enabled: boolean) => void
+  privateProfile: boolean
+  setPrivateProfile: (enabled: boolean) => void
+  compactMode: boolean
+  setCompactMode: (enabled: boolean) => void
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null)
 const THEME_KEY = 'mentras.theme'
+const EMAIL_NOTIFICATIONS_KEY = 'mentras.email-notifications'
+const PRIVATE_PROFILE_KEY = 'mentras.private-profile'
+const COMPACT_MODE_KEY = 'mentras.compact-mode'
 const readTheme = (): Theme => localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+const readBoolean = (key: string, fallback: boolean) => {
+  const value = localStorage.getItem(key)
+  return value === null ? fallback : value === 'true'
+}
 
 export const getLocalizedCopy = <CopyMap extends Partial<Record<Language, unknown>>>(
   copy: CopyMap,
@@ -39,6 +47,9 @@ export const getLocalizedCopy = <CopyMap extends Partial<Record<Language, unknow
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [language, setCurrentLanguage] = useState<Language>(i18n.language as Language)
   const [theme, setTheme] = useState<Theme>(readTheme)
+  const [emailNotifications, setEmailNotifications] = useState(() => readBoolean(EMAIL_NOTIFICATIONS_KEY, true))
+  const [privateProfile, setPrivateProfile] = useState(() => readBoolean(PRIVATE_PROFILE_KEY, false))
+  const [compactMode, setCompactMode] = useState(() => readBoolean(COMPACT_MODE_KEY, false))
 
   useEffect(() => {
     const syncLanguage = (nextLanguage: string) => setCurrentLanguage(nextLanguage as Language)
@@ -49,7 +60,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
     document.documentElement.lang = language
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
+    document.documentElement.dir = 'ltr'
   }, [language])
 
   useEffect(() => {
@@ -57,8 +68,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
+  useEffect(() => localStorage.setItem(EMAIL_NOTIFICATIONS_KEY, String(emailNotifications)), [emailNotifications])
+  useEffect(() => localStorage.setItem(PRIVATE_PROFILE_KEY, String(privateProfile)), [privateProfile])
+  useEffect(() => {
+    localStorage.setItem(COMPACT_MODE_KEY, String(compactMode))
+    document.documentElement.classList.toggle('compact-mode', compactMode)
+  }, [compactMode])
+
   return (
-    <PreferencesContext.Provider value={{ language, setLanguage: (nextLanguage) => void i18n.changeLanguage(nextLanguage), theme, setTheme }}>
+    <PreferencesContext.Provider value={{ language, setLanguage: (nextLanguage) => void i18n.changeLanguage(nextLanguage), theme, setTheme, emailNotifications, setEmailNotifications, privateProfile, setPrivateProfile, compactMode, setCompactMode }}>
       {children}
     </PreferencesContext.Provider>
   )

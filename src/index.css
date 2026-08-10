@@ -1,4 +1,8 @@
 @import "tailwindcss";
+
+html.compact-mode {
+  font-size: 93.75%;
+}
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
