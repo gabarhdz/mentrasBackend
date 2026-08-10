@@ -25,6 +25,7 @@ def validate_post_images(value: str) -> None:
 
 class Forum(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='created_forums')
     name = models.CharField(max_length=30,unique=True,blank=False,null=False)
     description = models.TextField(max_length=250,unique=False,blank=False,null=False)
     profile_pic = models.TextField(blank=True)
@@ -35,6 +36,29 @@ class ForumUser(models.Model):
     forum = models.ForeignKey(Forum,on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     isAdmin=models.BooleanField(default=False)
+
+class ForumJoinRequest(models.Model):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    ]
+
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['forum', 'user'],
+                name='unique_forum_join_request',
+            ),
+        ]
     
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

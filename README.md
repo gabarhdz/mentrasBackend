@@ -388,9 +388,16 @@ Returns one forum.
 }
 ```
 
-#### `POST /api/forum/<uuid:id>/`
+#### `PATCH /api/forum/<uuid:id>/`
 
-Used as a partial update route for a forum.
+Updates a forum partially. Only a forum administrator can edit it.
+
+To update the forum profile photo, send the request as `multipart/form-data`
+with the field `profile_pic` containing the image file:
+
+```text
+profile_pic: forum-cover.jpg
+```
 
 Request:
 
@@ -400,6 +407,10 @@ Request:
   "is_private": true
 }
 ```
+
+#### `DELETE /api/forum/<uuid:id>/`
+
+Deletes a forum. Only a forum administrator can delete it.
 
 #### `GET /api/forum/post/`
 
