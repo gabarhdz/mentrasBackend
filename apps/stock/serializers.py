@@ -8,9 +8,13 @@ from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 class ItemSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     profile_pic = CloudinaryImageField(required=True, allow_null=False)
+    stock = serializers.IntegerField(min_value=0)
 
     def create(self, validated_data):
         profile_pic_file = validated_data.pop("profile_pic")
+        request = self.context.get("request")
+        if request is not None and request.user.is_authenticated:
+            validated_data["created_by"] = request.user
         item = Item.objects.create(**validated_data)
         item.profile_pic = upload_profile_pic(
             profile_pic_file,
@@ -41,7 +45,8 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ["id", "name", "profile_pic", "price", "stock"]
+        fields = ["id", "name", "profile_pic", "price", "stock", "created_by"]
+        read_only_fields = ["id", "created_by"]
         extra_kwargs = {
             "name": {"required": True, "allow_blank": False},
             "price": {"required": True},

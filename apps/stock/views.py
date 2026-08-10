@@ -16,10 +16,10 @@ class AllItems(APIView):
         return Response(serializer.data)
     
     def post(self, request):
-        serializer = ItemSerializer(data=request.data)
+        serializer = ItemSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             item = serializer.save()
-            return Response(ItemSerializer(item).data, status=201)
+            return Response(ItemSerializer(item, context={"request": request}).data, status=201)
         return Response(serializer.errors, status=400)
     
 class SpecItem(APIView):
@@ -32,6 +32,32 @@ class SpecItem(APIView):
 
         serializer = ItemSerializer(item)
         return Response(serializer.data)
+
+    def patch(self, request, item_id):
+        try:
+            item = Item.objects.get(id=item_id)
+        except Item.DoesNotExist:
+            return Response({"error": "Item not found"}, status=404)
+
+        if item.created_by != request.user:
+            return Response(
+                {"error": "You do not have permission to edit this item"},
+                status=403,
+            )
+
+        serializer = ItemSerializer(
+            item,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        if serializer.is_valid():
+            item = serializer.save()
+            return Response(
+                ItemSerializer(item, context={"request": request}).data,
+                status=200,
+            )
+        return Response(serializer.errors, status=400)
     
 class AllMenus(APIView):
     permission_classes = [IsEmailVerified]
