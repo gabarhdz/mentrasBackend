@@ -1,5 +1,5 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { BadgeCheck, ImagePlus, LoaderCircle, Lock, MessageSquare, Plus, ShieldCheck, X } from 'lucide-react'
+import { BadgeCheck, ImagePlus, LoaderCircle, Lock, MessageSquare, Pencil, Plus, Save, ShieldCheck, Trash2, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,7 @@ type ForumSidebarProps = {
     description: string
     profilePic: string
     isPrivate: boolean
+    isAdmin: boolean
   }[]
   activeForumId: string | null
   supportsScopedPosts: boolean
@@ -27,6 +28,8 @@ type ForumSidebarProps = {
   createForumSuccessMessage?: string | null
   onSelectForum: (forumId: string) => void
   onCreateForum: (payload: CreateForumPayload) => Promise<void>
+  onEditForum: (forumId: string, payload: Omit<CreateForumPayload, 'profilePicFile'>) => Promise<void>
+  onDeleteForum: (forumId: string) => Promise<void>
 }
 
 const getInitials = (value: string) =>
@@ -48,12 +51,19 @@ export function ForumSidebar({
   createForumSuccessMessage,
   onSelectForum,
   onCreateForum,
+  onEditForum,
+  onDeleteForum,
 }: ForumSidebarProps) {
   const [isCreateExpanded, setIsCreateExpanded] = useState(false)
   const [forumName, setForumName] = useState('')
   const [forumDescription, setForumDescription] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
   const [profilePicFile, setProfilePicFile] = useState<File | null>(null)
+  const [isEditExpanded, setIsEditExpanded] = useState(false)
+  const activeForum = forums.find((forum) => forum.id === activeForumId)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editIsPrivate, setEditIsPrivate] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const profilePicPreviewUrl = useMemo(
@@ -95,6 +105,17 @@ export function ForumSidebar({
       isPrivate,
       profilePicFile,
     })
+  }
+
+  const handleEditForum = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!activeForum) return
+    await onEditForum(activeForum.id, {
+      name: editName.trim(),
+      description: editDescription.trim(),
+      isPrivate: editIsPrivate,
+    })
+    setIsEditExpanded(false)
   }
 
   return (
@@ -289,6 +310,46 @@ export function ForumSidebar({
             )
           })}
         </div>
+
+        {activeForum?.isAdmin ? (
+          <div className="mt-4">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+              onClick={() => {
+                setEditName(activeForum.name)
+                setEditDescription(activeForum.description)
+                setEditIsPrivate(activeForum.isPrivate)
+                setIsEditExpanded((current) => !current)
+              }}
+            >
+              <Pencil className="size-4" />
+              Editar foro
+            </button>
+            <button
+              type="button"
+              className="ml-2 inline-flex items-center gap-2 rounded-full border border-destructive/25 px-4 py-2 text-sm font-medium text-destructive transition hover:bg-destructive/8"
+              onClick={() => void onDeleteForum(activeForum.id)}
+            >
+              <Trash2 className="size-4" />
+              Eliminar foro
+            </button>
+
+            {isEditExpanded ? (
+              <form className="mt-4 space-y-4 rounded-[1.35rem] border border-border/70 bg-background/75 p-4" onSubmit={(event) => void handleEditForum(event)}>
+                <input className="w-full rounded-[1rem] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary/35" maxLength={30} value={editName} onChange={(event) => setEditName(event.target.value)} />
+                <textarea className="min-h-24 w-full rounded-[1rem] border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary/35" maxLength={250} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} />
+                <label className="flex items-center gap-3 text-sm text-foreground">
+                  <input checked={editIsPrivate} type="checkbox" onChange={(event) => setEditIsPrivate(event.target.checked)} />
+                  Foro privado
+                </label>
+                <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                  <Save className="size-4" /> Guardar cambios
+                </button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-[1.75rem] border border-border/70 bg-card/92 p-5 shadow-sm backdrop-blur">

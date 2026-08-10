@@ -16,6 +16,7 @@ type ApiForumRecord = {
   profile_pic?: string
   is_private?: boolean
   is_member?: boolean
+  is_admin?: boolean
   created_at?: string
 }
 
@@ -204,6 +205,7 @@ const normalizeForum = (forum: ApiForumRecord, index: number): ForumRecord => ({
   profilePic: typeof forum.profile_pic === 'string' ? forum.profile_pic : '',
   isPrivate: Boolean(forum.is_private),
   isMember: Boolean(forum.is_member),
+  isAdmin: Boolean(forum.is_admin),
   createdAt: typeof forum.created_at === 'string' ? forum.created_at : '',
 })
 
@@ -322,6 +324,24 @@ const createForumPost = async (forumId: string, payload: ForumComposerPayload) =
   return normalizePost({ ...data, forum_id: forumId }, 0)
 }
 
+const updateForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean }) => {
+  const response = await authFetch(buildBackendUrl(`/api/forum/${forumId}/`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: payload.name,
+      description: payload.description,
+      is_private: payload.isPrivate,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response, 'No se pudo editar el foro.'))
+  }
+
+  return normalizeForum((await response.json()) as ApiForumRecord, 0)
+}
+
 const removeForumPost = async (postId: string) => {
   const response = await authFetch(buildBackendUrl(`/api/forum/post/${postId}/`), {
     method: 'DELETE',
@@ -329,6 +349,13 @@ const removeForumPost = async (postId: string) => {
 
   if (!response.ok) {
     throw new Error(await getResponseErrorMessage(response, 'No se pudo eliminar la publicacion.'))
+  }
+}
+
+const removeForum = async (forumId: string) => {
+  const response = await authFetch(buildBackendUrl(`/api/forum/${forumId}/`), { method: 'DELETE' })
+  if (!response.ok) {
+    throw new Error(await getResponseErrorMessage(response, 'No se pudo eliminar el foro.'))
   }
 }
 
@@ -347,6 +374,7 @@ export function BlogForumPrototype() {
   const [isSubmittingPost, setIsSubmittingPost] = useState(false)
   const [isCreatingForum, setIsCreatingForum] = useState(false)
   const [isDeletingPostId, setIsDeletingPostId] = useState<string | null>(null)
+  const [managedForumIds, setManagedForumIds] = useState<string[]>([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -451,7 +479,8 @@ export function BlogForumPrototype() {
       setCreateForumErrorMessage(null)
       setCreateForumSuccessMessage(null)
       const createdForum = await createForum(payload)
-      setForums((current) => [createdForum, ...current])
+      setManagedForumIds((current) => [...new Set([...current, createdForum.id])])
+      setForums((current) => [{ ...createdForum, isAdmin: true, isMember: true }, ...current])
       const nextSearchParams = new URLSearchParams(searchParams)
       nextSearchParams.set('forum', createdForum.id)
       setSearchParams(nextSearchParams)
@@ -461,6 +490,15 @@ export function BlogForumPrototype() {
       setCreateForumErrorMessage(message)
     } finally {
       setIsCreatingForum(false)
+    }
+  }
+
+  const handleEditForum = async (forumId: string, payload: { name: string; description: string; isPrivate: boolean }) => {
+    try {
+      const updatedForum = await updateForum(forumId, payload)
+      setForums((current) => current.map((forum) => (forum.id === forumId ? { ...forum, ...updatedForum } : forum)))
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'No se pudo editar el foro.')
     }
   }
 
@@ -512,6 +550,25 @@ export function BlogForumPrototype() {
     }
   }
 
+  const handleDeleteForum = async (forumId: string) => {
+    const forum = forums.find((item) => item.id === forumId)
+    if (!forum || !window.confirm(`¿Eliminar la comunidad ${forum.name}? Esta acción no se puede deshacer.`)) return
+
+    try {
+      await removeForum(forumId)
+      const remainingForums = forums.filter((item) => item.id !== forumId)
+      setForums(remainingForums)
+      setManagedForumIds((current) => current.filter((id) => id !== forumId))
+      if (remainingForums[0]) {
+        const nextParams = new URLSearchParams(searchParams)
+        nextParams.set('forum', remainingForums[0].id)
+        setSearchParams(nextParams)
+      }
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'No se pudo eliminar el foro.')
+    }
+  }
+
   if (pageError && forums.length === 0 && posts.length === 0) {
     return (
       <section className="rounded-[2rem] border border-destructive/20 bg-card p-6 shadow-sm">
@@ -525,6 +582,11 @@ export function BlogForumPrototype() {
   }
 
   const visualPostCount = posts.filter((post) => post.images.length > 0).length
+  const forumsWithPermissions = forums.map((forum) => ({
+    ...forum,
+    isAdmin: forum.isAdmin || managedForumIds.includes(forum.id),
+    isMember: forum.isMember || managedForumIds.includes(forum.id),
+  }))
 
   return (
     <div className="space-y-8">
@@ -541,11 +603,13 @@ export function BlogForumPrototype() {
           canCreateForum={hasStoredSession()}
           createForumErrorMessage={createForumErrorMessage}
           createForumSuccessMessage={createForumSuccessMessage}
-          forums={forums}
+          forums={forumsWithPermissions}
           isCreatingForum={isCreatingForum}
           selectedForumPostCount={selectedForumPostCount}
           supportsScopedPosts={supportsScopedPosts}
           onCreateForum={handleCreateForum}
+          onEditForum={handleEditForum}
+          onDeleteForum={handleDeleteForum}
           onSelectForum={handleSelectForum}
         />
 
