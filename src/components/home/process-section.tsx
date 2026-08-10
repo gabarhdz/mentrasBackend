@@ -2,7 +2,7 @@ import { Compass, Rocket, SearchCheck } from "lucide-react";
 
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { usePreferences } from "@/lib/preferences";
+import { getLocalizedCopy, usePreferences } from "@/lib/preferences";
 
 const copy = {
   es: {
@@ -55,7 +55,7 @@ const icons = [SearchCheck, Compass, Rocket] as const;
 
 export function ProcessSection() {
   const { language } = usePreferences();
-  const t = copy[language];
+  const t = getLocalizedCopy(copy, language);
 
   return (
     <section className="px-6 py-16 sm:py-24">

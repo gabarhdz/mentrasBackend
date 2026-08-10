@@ -2,7 +2,7 @@ import { BriefcaseBusiness, Clock3, ShieldCheck } from "lucide-react";
 
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { usePreferences } from "@/lib/preferences";
+import { getLocalizedCopy, usePreferences } from "@/lib/preferences";
 
 const copy = {
   es: {
@@ -75,7 +75,7 @@ const icons = [BriefcaseBusiness, Clock3, ShieldCheck] as const;
 
 export function SocialProofSection() {
   const { language } = usePreferences();
-  const t = copy[language];
+  const t = getLocalizedCopy(copy, language);
 
   return (
     <section id="contacto" className="px-6 pb-20 pt-16 sm:pb-28 sm:pt-24">

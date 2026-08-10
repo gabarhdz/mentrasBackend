@@ -2,7 +2,7 @@ import { Bot, Globe, MessageCircleMore, Workflow } from "lucide-react";
 
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { usePreferences } from "@/lib/preferences";
+import { getLocalizedCopy, usePreferences } from "@/lib/preferences";
 
 const copy = {
   es: {
@@ -59,7 +59,7 @@ const icons = [Globe, MessageCircleMore, Workflow, Bot] as const;
 
 export function FeatureGrid() {
   const { language } = usePreferences();
-  const t = copy[language];
+  const t = getLocalizedCopy(copy, language);
 
   return (
     <section id="servicios" className="px-6 py-16 sm:py-24">

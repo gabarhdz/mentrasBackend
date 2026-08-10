@@ -1,7 +1,7 @@
 import { FileText, PlayCircle } from 'lucide-react'
 
 import type { LessonSummary } from '@/components/learning/course-learning-types'
-import { usePreferences } from '@/lib/preferences'
+import { getLocalizedCopy, usePreferences } from '@/lib/preferences'
 
 type CourseLessonViewerProps = {
   selectedLesson: LessonSummary | null
@@ -60,7 +60,7 @@ const copy = {
 
 export function CourseLessonViewer({ selectedLesson }: CourseLessonViewerProps) {
   const { language } = usePreferences()
-  const t = copy[language]
+  const t = getLocalizedCopy(copy, language)
 
   return (
     <section className="space-y-5">

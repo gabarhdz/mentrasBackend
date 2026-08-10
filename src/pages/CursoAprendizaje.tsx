@@ -10,7 +10,7 @@ import type { CourseDetail } from '@/components/learning/course-learning-types'
 import Footer from '@/components/ui/Footer'
 import Header from '@/components/ui/Header'
 import { authFetch, clearAuthTokens, hasStoredSession } from '@/lib/auth'
-import { usePreferences } from '@/lib/preferences'
+import { getLocalizedCopy, usePreferences } from '@/lib/preferences'
 import { buildBackendUrl } from '@/lib/utils'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -84,7 +84,7 @@ const copy = {
 
 export default function CursoAprendizaje() {
   const { language } = usePreferences()
-  const t = copy[language]
+  const t = getLocalizedCopy(copy, language)
   const { courseId } = useParams()
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [selectedLessonId, setSelectedLessonId] = useState('')

@@ -394,7 +394,7 @@ const translations = {
 } as const
 
 type TranslationSource = keyof typeof translations
-type NonSpanishLanguage = Exclude<Language, 'es'>
+type TranslationTarget = Partial<Record<Exclude<Language, 'es'>, string>>
 
 const phraseLookup = new Map<string, TranslationSource>()
 
@@ -409,7 +409,10 @@ const translateValue = (value: string, language: Language) => {
   }
 
   const source = phraseLookup.get(value)
-  return source ? translations[source][language as NonSpanishLanguage] : null
+  if (!source) return null
+
+  const target = translations[source] as TranslationTarget
+  return target[language] ?? target.en ?? source
 }
 
 const translateTextNode = (node: Text, language: Language) => {

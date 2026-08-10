@@ -7,7 +7,7 @@ import type { UnitSummary } from '@/components/learning/course-learning-types'
 import Footer from '@/components/ui/Footer'
 import Header from '@/components/ui/Header'
 import { authFetch, clearAuthTokens, getStoredUserId, hasStoredSession } from '@/lib/auth'
-import { usePreferences } from '@/lib/preferences'
+import { getLocalizedCopy, usePreferences } from '@/lib/preferences'
 import { buildBackendUrl } from '@/lib/utils'
 
 type UserProfile = {
@@ -270,7 +270,7 @@ const fetchCourses = async () => {
 
 export default function AprendizajeCatalogo() {
   const { language } = usePreferences()
-  const t = copy[language]
+  const t = getLocalizedCopy(copy, language)
   const userId = getStoredUserId()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [courses, setCourses] = useState<CourseSummary[]>([])

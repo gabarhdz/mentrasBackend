@@ -1,23 +1,25 @@
 import React from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { usePreferences } from '@/lib/preferences'
+import { languageOptions, type Language, usePreferences } from '@/lib/preferences'
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = React.useState(false)
   const { language, setLanguage } = usePreferences()
-  const texts = {
-    es: { pymes: 'Pymes', learning: 'Aprendizaje', tools: 'Herramientas', dashboard: 'Dashboard', blog: 'Blog', settings: 'Opciones', profile: 'Ir a mi perfil' },
-    en: { pymes: 'Businesses', learning: 'Learning', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Settings', profile: 'My profile' },
-    pt: { pymes: 'Empresas', learning: 'Aprendizagem', tools: 'Ferramentas', dashboard: 'Painel', blog: 'Blog', settings: 'Opções', profile: 'Meu perfil' },
-    fr: { pymes: 'Entreprises', learning: 'Apprentissage', tools: 'Outils', dashboard: 'Tableau de bord', blog: 'Blog', settings: 'Paramètres', profile: 'Mon profil' },
+  const texts: Record<Language, { pymes: string; learning: string; tools: string; dashboard: string; blog: string; settings: string; profile: string; language: string }> = {
+    es: { pymes: 'Pymes', learning: 'Aprendizaje', tools: 'Herramientas', dashboard: 'Dashboard', blog: 'Blog', settings: 'Opciones', profile: 'Ir a mi perfil', language: 'Idioma' },
+    en: { pymes: 'Businesses', learning: 'Learning', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Settings', profile: 'My profile', language: 'Language' },
+    pt: { pymes: 'Empresas', learning: 'Aprendizagem', tools: 'Ferramentas', dashboard: 'Painel', blog: 'Blog', settings: 'Opções', profile: 'Meu perfil', language: 'Idioma' },
+    fr: { pymes: 'Entreprises', learning: 'Apprentissage', tools: 'Outils', dashboard: 'Tableau de bord', blog: 'Blog', settings: 'Paramètres', profile: 'Mon profil', language: 'Langue' },
+    de: { pymes: 'Unternehmen', learning: 'Lernen', tools: 'Werkzeuge', dashboard: 'Dashboard', blog: 'Blog', settings: 'Einstellungen', profile: 'Mein Profil', language: 'Sprache' },
+    it: { pymes: 'Imprese', learning: 'Apprendimento', tools: 'Strumenti', dashboard: 'Dashboard', blog: 'Blog', settings: 'Impostazioni', profile: 'Il mio profilo', language: 'Lingua' },
+    ru: { pymes: 'Компании', learning: 'Обучение', tools: 'Инструменты', dashboard: 'Панель', blog: 'Блог', settings: 'Настройки', profile: 'Мой профиль', language: 'Язык' },
+    zh: { pymes: '企业', learning: '学习', tools: '工具', dashboard: '仪表板', blog: '博客', settings: '设置', profile: '我的资料', language: '语言' },
+    ja: { pymes: '企業', learning: '学習', tools: 'ツール', dashboard: 'ダッシュボード', blog: 'ブログ', settings: '設定', profile: 'プロフィール', language: '言語' },
+    ar: { pymes: 'الشركات', learning: 'التعلم', tools: 'الأدوات', dashboard: 'لوحة التحكم', blog: 'المدونة', settings: 'الإعدادات', profile: 'ملفي الشخصي', language: 'اللغة' },
+    hi: { pymes: 'व्यवसाय', learning: 'सीखना', tools: 'उपकरण', dashboard: 'डैशबोर्ड', blog: 'ब्लॉग', settings: 'सेटिंग्स', profile: 'मेरी प्रोफ़ाइल', language: 'भाषा' },
+    nl: { pymes: 'Bedrijven', learning: 'Leren', tools: 'Tools', dashboard: 'Dashboard', blog: 'Blog', settings: 'Instellingen', profile: 'Mijn profiel', language: 'Taal' },
   }
   const text = texts[language]
-  const languageOptions = [
-    { value: 'es', label: '🇪🇸 ES' },
-    { value: 'en', label: '🇺🇸 EN' },
-    { value: 'pt', label: '🇧🇷 PT' },
-    { value: 'fr', label: '🇫🇷 FR' },
-  ] as const
   const navItems = [
     { label: text.pymes, to: '/pymes' },
     { label: text.learning, to: '/aprendizaje' },
@@ -52,14 +54,14 @@ const Header = () => {
       </div>
 
       <div className="hidden items-center gap-3 md:flex">
-        <label className="sr-only" htmlFor="site-language">Idioma</label>
+        <label className="sr-only" htmlFor="site-language">{text.language}</label>
         <select
           id="site-language"
           value={language}
           className="rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground outline-none transition hover:border-primary/35"
-          onChange={(event) => setLanguage(event.target.value as typeof language)}
+          onChange={(event) => setLanguage(event.target.value as Language)}
         >
-          {languageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          {languageOptions.map((option) => <option key={option.value} value={option.value}>{option.flag} {option.shortLabel}</option>)}
         </select>
         <Link
           to="/profile"
@@ -102,12 +104,12 @@ const Header = () => {
             </NavLink>
           ))}
           <select
-            aria-label="Idioma"
+            aria-label={text.language}
             value={language}
             className="mt-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground outline-none"
-            onChange={(event) => setLanguage(event.target.value as typeof language)}
+            onChange={(event) => setLanguage(event.target.value as Language)}
           >
-            {languageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {languageOptions.map((option) => <option key={option.value} value={option.value}>{option.flag} {option.shortLabel}</option>)}
           </select>
           <Link
             to="/profile"

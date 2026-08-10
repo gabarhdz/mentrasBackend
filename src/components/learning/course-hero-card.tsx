@@ -1,7 +1,7 @@
 import { BookOpen } from 'lucide-react'
 
 import type { CourseDetail } from '@/components/learning/course-learning-types'
-import { usePreferences } from '@/lib/preferences'
+import { getLocalizedCopy, usePreferences } from '@/lib/preferences'
 
 type CourseHeroCardProps = {
   course: CourseDetail | null
@@ -46,7 +46,7 @@ const copy = {
 
 export function CourseHeroCard({ course, totalLessons, unitCount }: CourseHeroCardProps) {
   const { language } = usePreferences()
-  const t = copy[language]
+  const t = getLocalizedCopy(copy, language)
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card/90 shadow-[0_28px_80px_-46px_rgba(0,137,123,0.45)] backdrop-blur">

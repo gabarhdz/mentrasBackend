@@ -1,7 +1,7 @@
 import { PlayCircle } from 'lucide-react'
 
 import type { UnitSummary } from '@/components/learning/course-learning-types'
-import { usePreferences } from '@/lib/preferences'
+import { getLocalizedCopy, usePreferences } from '@/lib/preferences'
 
 type CourseOutlinePanelProps = {
   selectedLessonId: string
@@ -62,7 +62,7 @@ export function CourseOutlinePanel({
   units,
 }: CourseOutlinePanelProps) {
   const { language } = usePreferences()
-  const t = copy[language]
+  const t = getLocalizedCopy(copy, language)
 
   return (
     <div className="rounded-[2rem] border border-border/70 bg-card/92 p-6 backdrop-blur">

@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 
 import { MarqueeStrip } from "@/components/ui/marquee-strip";
 import { Reveal } from "@/components/ui/reveal";
-import { usePreferences } from "@/lib/preferences";
+import { getLocalizedCopy, usePreferences } from "@/lib/preferences";
 
 const copy = {
   es: {
@@ -98,7 +98,7 @@ const copy = {
 
 export function HeroSection() {
   const { language } = usePreferences();
-  const t = copy[language];
+  const t = getLocalizedCopy(copy, language);
   const heroPoints = [
     { icon: Smartphone, label: t.points[0] },
     { icon: ChartSpline, label: t.points[1] },
