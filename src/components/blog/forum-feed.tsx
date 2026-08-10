@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Flame, LockKeyhole, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Flame, LockKeyhole, Sparkles, UserPlus } from 'lucide-react'
 
 import type { ForumComposerPayload, ForumPost, ForumRecord } from './blog-types'
 import { ForumComposerCard } from './forum-composer-card'
@@ -21,6 +21,8 @@ type ForumFeedProps = {
   isPrivateForumLocked?: boolean
   onSubmitPost: (payload: ForumComposerPayload) => Promise<void>
   onDeletePost: (postId: string) => Promise<void>
+  onJoinForum: () => Promise<void>
+  isJoiningForum?: boolean
 }
 
 export function ForumFeed({
@@ -39,6 +41,8 @@ export function ForumFeed({
   isPrivateForumLocked = false,
   onSubmitPost,
   onDeletePost,
+  onJoinForum,
+  isJoiningForum = false,
 }: ForumFeedProps) {
   const [isComposerExpanded, setIsComposerExpanded] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -77,7 +81,7 @@ export function ForumFeed({
         </div>
       </section>
 
-      {!isPrivateForumLocked ? <ForumComposerCard
+      {!isPrivateForumLocked && canPublish ? <ForumComposerCard
         activeForum={activeForum}
         canPublish={canPublish}
         errorMessage={composerErrorMessage}
@@ -87,6 +91,19 @@ export function ForumFeed({
         onExpandChange={setIsComposerExpanded}
         onSubmit={onSubmitPost}
       /> : null}
+
+      {!isPrivateForumLocked && activeForum && !canPublish ? (
+        <section className="rounded-[1.75rem] border border-primary/20 bg-card/92 p-6 shadow-sm backdrop-blur">
+          <div className="inline-flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserPlus className="size-5" /></div>
+          <h3 className="mt-4 text-xl font-semibold text-foreground">Únete para publicar</h3>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+            {activeForum.isPrivate ? 'Solicita acceso a esta comunidad privada. Podrás crear publicaciones cuando un administrador apruebe tu solicitud.' : 'Únete a esta comunidad para iniciar conversaciones y compartir publicaciones.'}
+          </p>
+          <button type="button" disabled={isJoiningForum} onClick={() => void onJoinForum()} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
+            <UserPlus className="size-4" /> {activeForum.isPrivate ? 'Solicitar acceso' : 'Unirme al foro'}
+          </button>
+        </section>
+      ) : null}
 
       {isPrivateForumLocked ? (
         <section className="rounded-[1.75rem] border border-border/70 bg-card/92 p-8 text-center shadow-sm">

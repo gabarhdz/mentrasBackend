@@ -543,6 +543,11 @@ export function BlogForumPrototype() {
       return
     }
 
+    if (!activeForum.isMember) {
+      setComposerErrorMessage('Debes unirte al foro antes de crear una publicación.')
+      return
+    }
+
     if (!payload.title.trim() || !payload.text.trim()) {
       setComposerErrorMessage('Completa el titulo y el contenido antes de publicar.')
       return
@@ -672,7 +677,7 @@ export function BlogForumPrototype() {
 
         <ForumFeed
           activeForum={activeForum}
-          canPublish={hasStoredSession()}
+          canPublish={hasStoredSession() && Boolean(activeForum?.isMember)}
           composerErrorMessage={composerErrorMessage}
           composerSuccessMessage={composerSuccessMessage}
           currentUserId={userId}
@@ -686,6 +691,8 @@ export function BlogForumPrototype() {
           useActiveForumAsCardLabel={supportsScopedPosts}
           onDeletePost={handleDeletePost}
           onSubmitPost={handleSubmitPost}
+          onJoinForum={handleJoinForum}
+          isJoiningForum={isJoiningForum}
         />
       </section>
     </div>
