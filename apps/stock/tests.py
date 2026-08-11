@@ -129,6 +129,7 @@ class ItemsMenuViewTests(TestCase):
             profile_pic="coffee.png",
             price="4.50",
             stock=25,
+            created_by=user,
         )
         request = APIRequestFactory().post(
             f"/stock/menus/{menu.id}/items/",
@@ -149,6 +150,306 @@ class ItemsMenuViewTests(TestCase):
         self.assertEqual(movement.action, MenuMovement.Action.ITEM_ADDED)
         self.assertEqual(movement.quantity, 3)
 
+    def test_post_adds_quantity_to_existing_menu_item_instead_of_duplicating(self):
+        user = get_user_model().objects.create_user(
+            username="merge-owner",
+            email="merge-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=25,
+            created_by=user,
+        )
+        MenuItem.objects.create(menu=menu, item=item, quantity=3)
+        request = APIRequestFactory().post(
+            f"/stock/menus/{menu.id}/items/",
+            {"item_id": item.id, "quantity": 4},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(MenuItem.objects.filter(menu=menu, item=item).count(), 1)
+        menu_item = MenuItem.objects.get(menu=menu, item=item)
+        item.refresh_from_db()
+        self.assertEqual(menu_item.quantity, 7)
+        self.assertEqual(item.stock, 21)
+        self.assertEqual(len(response.data["menu_items"]), 1)
+        self.assertEqual(response.data["menu_items"][0]["quantity"], 7)
+
+    def test_post_consolidates_existing_duplicate_menu_items(self):
+        user = get_user_model().objects.create_user(
+            username="legacy-merge-owner",
+            email="legacy-merge-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=25,
+            created_by=user,
+        )
+        MenuItem.objects.create(menu=menu, item=item, quantity=3)
+        MenuItem.objects.create(menu=menu, item=item, quantity=4)
+        request = APIRequestFactory().post(
+            f"/stock/menus/{menu.id}/items/",
+            {"item_id": item.id, "quantity": 5},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(MenuItem.objects.filter(menu=menu, item=item).count(), 1)
+        menu_item = MenuItem.objects.get(menu=menu, item=item)
+        self.assertEqual(menu_item.quantity, 12)
+        self.assertEqual(response.data["menu_items"][0]["quantity"], 12)
+
+    def test_post_rejects_item_from_another_pyme_owner(self):
+        owner = get_user_model().objects.create_user(
+            username="owner",
+            email="owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        other_owner = get_user_model().objects.create_user(
+            username="other-owner",
+            email="other-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=owner,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(
+            pyme=pyme,
+            name="Breakfast",
+            description="Morning menu",
+        )
+        other_item = Item.objects.create(
+            name="Hammer",
+            profile_pic="hammer.png",
+            price="4.50",
+            stock=25,
+            created_by=other_owner,
+        )
+        request = APIRequestFactory().post(
+            f"/stock/menus/{menu.id}/items/",
+            {"item_id": other_item.id, "quantity": 1},
+            format="json",
+        )
+        force_authenticate(request, user=owner)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(MenuItem.objects.filter(menu=menu, item=other_item).exists())
+
+    def test_patch_reduces_menu_item_quantity_and_returns_stock(self):
+        user = get_user_model().objects.create_user(
+            username="stock-owner",
+            email="stock-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=5,
+            created_by=user,
+        )
+        menu_item = MenuItem.objects.create(menu=menu, item=item, quantity=20)
+        request = APIRequestFactory().patch(
+            f"/stock/menus/{menu.id}/items/{menu_item.id}/",
+            {"quantity": 10},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id, menu_item_id=menu_item.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        menu_item.refresh_from_db()
+        item.refresh_from_db()
+        self.assertEqual(menu_item.quantity, 10)
+        self.assertEqual(item.stock, 15)
+        movement = MenuMovement.objects.get(menu=menu, action=MenuMovement.Action.QUANTITY_UPDATED)
+        self.assertEqual(movement.quantity, 10)
+        self.assertEqual(movement.previous_quantity, 20)
+
+    def test_patch_reduces_grouped_duplicate_menu_items_as_one_total(self):
+        user = get_user_model().objects.create_user(
+            username="legacy-stock-owner",
+            email="legacy-stock-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=5,
+            created_by=user,
+        )
+        first_menu_item = MenuItem.objects.create(menu=menu, item=item, quantity=8)
+        MenuItem.objects.create(menu=menu, item=item, quantity=12)
+        request = APIRequestFactory().patch(
+            f"/stock/menus/{menu.id}/items/{first_menu_item.id}/",
+            {"quantity": 10},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id, menu_item_id=first_menu_item.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(MenuItem.objects.filter(menu=menu, item=item).count(), 1)
+        menu_item = MenuItem.objects.get(menu=menu, item=item)
+        item.refresh_from_db()
+        self.assertEqual(menu_item.quantity, 10)
+        self.assertEqual(item.stock, 15)
+        movement = MenuMovement.objects.get(menu=menu, action=MenuMovement.Action.QUANTITY_UPDATED)
+        self.assertEqual(movement.quantity, 10)
+        self.assertEqual(movement.previous_quantity, 20)
+
+    def test_patch_increases_menu_item_quantity_when_stock_is_available(self):
+        user = get_user_model().objects.create_user(
+            username="increase-owner",
+            email="increase-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=15,
+            created_by=user,
+        )
+        menu_item = MenuItem.objects.create(menu=menu, item=item, quantity=10)
+        request = APIRequestFactory().patch(
+            f"/stock/menus/{menu.id}/items/{menu_item.id}/",
+            {"quantity": 20},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id, menu_item_id=menu_item.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        menu_item.refresh_from_db()
+        item.refresh_from_db()
+        self.assertEqual(menu_item.quantity, 20)
+        self.assertEqual(item.stock, 5)
+
+    def test_patch_zero_quantity_removes_menu_item_and_returns_stock(self):
+        user = get_user_model().objects.create_user(
+            username="remove-owner",
+            email="remove-owner@example.com",
+            password="StrongPass123",
+            is_pyme_owner=True,
+            is_email_verified=True,
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=5,
+            created_by=user,
+        )
+        menu_item = MenuItem.objects.create(menu=menu, item=item, quantity=10)
+        request = APIRequestFactory().patch(
+            f"/stock/menus/{menu.id}/items/{menu_item.id}/",
+            {"quantity": 0},
+            format="json",
+        )
+        force_authenticate(request, user=user)
+
+        response = ItemsMenu.as_view()(request, menu_id=menu.id, menu_item_id=menu_item.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(MenuItem.objects.filter(id=menu_item.id).exists())
+        item.refresh_from_db()
+        self.assertEqual(item.stock, 15)
+        movement = MenuMovement.objects.get(menu=menu, action=MenuMovement.Action.ITEM_REMOVED)
+        self.assertEqual(movement.quantity, 10)
+
 
 class MenuSerializerTests(TestCase):
     def test_requires_pyme_for_menu_creation(self):
@@ -156,6 +457,35 @@ class MenuSerializerTests(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("pyme_id", serializer.errors)
+
+    def test_serializes_duplicate_menu_items_as_one_grouped_item(self):
+        user = get_user_model().objects.create_user(
+            username="serializer-owner",
+            email="serializer-owner@example.com",
+            password="StrongPass123",
+        )
+        category = Category.objects.create(name="Food")
+        pyme = Pyme.objects.create(
+            name="Cafe owner",
+            description="Owner pyme",
+            owner=user,
+            category=category,
+            foundation_date="2024-01-01",
+        )
+        menu = Menu.objects.create(pyme=pyme, name="Breakfast", description="Morning menu")
+        item = Item.objects.create(
+            name="Coffee",
+            profile_pic="coffee.png",
+            price="4.50",
+            stock=25,
+        )
+        MenuItem.objects.create(menu=menu, item=item, quantity=3)
+        MenuItem.objects.create(menu=menu, item=item, quantity=4)
+
+        serializer = MenuSerializer(menu)
+
+        self.assertEqual(len(serializer.data["menu_items"]), 1)
+        self.assertEqual(serializer.data["menu_items"][0]["quantity"], 7)
 
 
 class AllMenusViewTests(APITestCase):
@@ -240,3 +570,38 @@ class AllMenusViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Owner menu")
+
+    def test_my_items_only_returns_items_from_authenticated_owner_scope(self):
+        owned_item = Item.objects.create(
+            name="Owner item",
+            profile_pic="owner.png",
+            price="4.50",
+            stock=25,
+            created_by=self.owner,
+        )
+        other_item = Item.objects.create(
+            name="Other item",
+            profile_pic="other.png",
+            price="4.50",
+            stock=25,
+            created_by=self.other_owner,
+        )
+        owner_menu = Menu.objects.create(
+            pyme=self.owner_pyme,
+            name="Owner menu",
+            description="Visible",
+        )
+        MenuItem.objects.create(menu=owner_menu, item=owned_item, quantity=1)
+        other_menu = Menu.objects.create(
+            pyme=self.other_pyme,
+            name="Other menu",
+            description="Hidden",
+        )
+        MenuItem.objects.create(menu=other_menu, item=other_item, quantity=1)
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.get(reverse("my-items"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], owned_item.name)
