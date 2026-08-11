@@ -158,3 +158,59 @@ class PymeEmployees(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PymeEmployeeDetail(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get_employee(self, request, pyme_id, employee_id):
+        try:
+            employee = PymeEmployee.objects.select_related("pyme", "user").get(
+                id=employee_id,
+                pyme_id=pyme_id,
+            )
+        except PymeEmployee.DoesNotExist:
+            return None, Response(
+                {"error": "Employee not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if employee.pyme.owner != request.user:
+            return None, Response(
+                {"error": "You do not have permission to manage this pyme."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return employee, None
+
+    def patch(self, request, pyme_id, employee_id, *args, **kwargs):
+        employee, error_response = self.get_employee(request, pyme_id, employee_id)
+        if error_response:
+            return error_response
+
+        serializer = PymeEmployeeSerializer(
+            employee,
+            data=request.data,
+            partial=True,
+        )
+        if serializer.is_valid():
+            employee = serializer.save()
+            return Response(
+                PymeEmployeeSerializer(employee).data,
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pyme_id, employee_id, *args, **kwargs):
+        employee, error_response = self.get_employee(request, pyme_id, employee_id)
+        if error_response:
+            return error_response
+
+        if employee.user == employee.pyme.owner:
+            return Response(
+                {"error": "The pyme owner cannot be removed as an employee."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
