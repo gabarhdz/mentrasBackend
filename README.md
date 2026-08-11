@@ -548,6 +548,10 @@ Request:
 }
 ```
 
+#### `PATCH /api/stock/items/<uuid:id>/`
+
+Updates an item owned by the authenticated user. The fields `name`, `price`, `stock`, and `profile_pic` can be updated partially. Send `profile_pic` as `multipart/form-data` when changing the image.
+
 Response:
 
 ```json
