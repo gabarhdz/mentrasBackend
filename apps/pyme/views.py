@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
+from apps.notifications.services import create_notification
 
 from .models import Category, Pyme, PymeEmployee
 from .serializers import CategorySerializer, PymeEmployeeSerializer, PymeSerializer
@@ -38,6 +39,15 @@ class MyPymes(APIView):
 
     def get(self, request, *args, **kwargs):
         pymes = Pyme.objects.filter(owner=request.user).order_by("-access_date")
+        serializer = PymeSerializer(pymes, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MemberPymes(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, *args, **kwargs):
+        pymes = Pyme.objects.filter(employees__user=request.user).distinct().order_by("-access_date")
         serializer = PymeSerializer(pymes, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -152,6 +162,12 @@ class PymeEmployees(APIView):
                 )
 
             employee = serializer.save(pyme=pyme)
+            create_notification(
+                employee.user,
+                "Te añadieron a una pyme",
+                f"Ahora formas parte de {pyme.name} con el rol {employee.get_role_display()}.",
+                "pyme_employee",
+            )
             return Response(
                 PymeEmployeeSerializer(employee).data,
                 status=status.HTTP_201_CREATED,

@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.notifications.services import create_notification
 
 from .models import Course, MentorApplication
 from .serializers import (
@@ -83,6 +84,13 @@ class MentorApplicationView(APIView):
             return Response({"error": "You already have a pending mentor application"}, status=status.HTTP_400_BAD_REQUEST)
 
         application = serializer.save(applicant=request.user)
+        for admin in request.user.__class__.objects.filter(is_admin=True):
+            create_notification(
+                admin,
+                "Nueva solicitud de mentor",
+                f"{request.user.username} ha enviado una solicitud para ser mentor.",
+                "mentor_application",
+            )
         try:
             send_mail(
                 subject=f"Nueva solicitud de mentor: {request.user.username}",

@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.notifications.services import create_notification
 
 from .models import Forum, ForumJoinRequest, ForumUser, Post
 from .moderation import ModerationServiceError, post_contains_profanity
@@ -110,6 +111,19 @@ class JoinForum(APIView):
             join_request.status = ForumJoinRequest.PENDING
             join_request.save(update_fields=['status'])
 
+        if created:
+            admin_ids = ForumUser.objects.filter(
+                forum=forum,
+                isAdmin=True,
+            ).values_list('user_id', flat=True)
+            for admin in request.user.__class__.objects.filter(id__in=admin_ids):
+                create_notification(
+                    admin,
+                    "Nueva solicitud para tu foro",
+                    f"{request.user.username} quiere unirse a {forum.name}.",
+                    "forum_join_request",
+                )
+
         return Response(
             {'message': 'Join request sent', 'status': join_request.status},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
@@ -188,6 +202,19 @@ class ForumJoinRequests(APIView):
         join_request.save(update_fields=['status'])
         if decision == ForumJoinRequest.APPROVED:
             ForumUser.objects.get_or_create(forum=join_request.forum, user=join_request.user)
+            create_notification(
+                join_request.user,
+                "Solicitud de foro aprobada",
+                f"Ya puedes participar en {join_request.forum.name}.",
+                "forum_join_approved",
+            )
+        else:
+            create_notification(
+                join_request.user,
+                "Solicitud de foro rechazada",
+                f"Tu solicitud para unirte a {join_request.forum.name} fue rechazada.",
+                "forum_join_rejected",
+            )
 
         serializer = ForumJoinRequestSerializer(join_request, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'apps.learning.apps.LearningConfig',
     'apps.pyme.apps.PymeConfig',
     'apps.tools.apps.ToolsConfig',
+    'apps.chatbot.apps.ChatbotConfig',
+    'apps.notifications.apps.NotificationsConfig',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
