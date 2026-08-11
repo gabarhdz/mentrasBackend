@@ -6,9 +6,11 @@ from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
 class UserSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True)
     is_mod = serializers.BooleanField(default=False)
     is_pyme_owner = serializers.BooleanField(default=False)
+    is_email_verified = serializers.BooleanField(read_only=True)
     is_admin = serializers.BooleanField(default=False)
     is_mentor = serializers.BooleanField(default=False)
     is_superuser = serializers.BooleanField(read_only=True)
@@ -28,7 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
             'is_admin',
             'is_superuser',
             'is_mentor',
-            'is_pyme_owner'
+            'is_pyme_owner',
+            'is_email_verified',
         ]
 
     def create(self, validated_data):

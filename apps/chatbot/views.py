@@ -52,7 +52,7 @@ class ChatbotView(APIView):
                 },
             ],
             "temperature": 0.2,
-            "max_tokens": 300,
+            "max_tokens": 3000,
         }
 
         try:

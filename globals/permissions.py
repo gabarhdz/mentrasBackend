@@ -5,6 +5,8 @@ class IsEmailVerified(permissions.BasePermission):
     Custom permission to only allow access to users with verified email addresses.
     """
 
+    message = "Debes verificar el email de tu cuenta antes de usar esta sección."
+
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and request.user.is_email_verified
     

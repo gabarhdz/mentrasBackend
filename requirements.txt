@@ -66,3 +66,4 @@ tzdata==2025.3
 uritemplate==4.2.0
 urllib3==2.6.3
 wrapt==2.1.2
+gunicorn==23.0.0
