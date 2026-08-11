@@ -147,8 +147,22 @@ class MenuSerializer(serializers.ModelSerializer):
         required=True,
         allow_null=False,
     )
-    menu_items = MenuItemSerializer(many=True, read_only=True)
+    menu_items = serializers.SerializerMethodField()
     movements = MenuMovementSerializer(many=True, read_only=True)
+
+    def get_menu_items(self, obj):
+        grouped_menu_items = {}
+
+        for menu_item in obj.menu_items.select_related("item").order_by("id"):
+            grouped_menu_item = grouped_menu_items.get(menu_item.item_id)
+
+            if grouped_menu_item:
+                grouped_menu_item.quantity += menu_item.quantity
+                continue
+
+            grouped_menu_items[menu_item.item_id] = menu_item
+
+        return MenuItemSerializer(grouped_menu_items.values(), many=True).data
 
     def validate(self, attrs):
         request = self.context.get("request")
