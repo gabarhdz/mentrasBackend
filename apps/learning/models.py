@@ -15,6 +15,33 @@ class Course(models.Model):
     def __str__(self):
         return self.name
 
+class MentorApplication(models.Model):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (PENDING, "Pending"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
+    ]
+
+    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="mentor_applications")
+    expertise = models.CharField(max_length=255)
+    experience = models.TextField()
+    motivation = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["applicant"],
+                condition=models.Q(status="pending"),
+                name="unique_pending_mentor_application",
+            ),
+        ]
+
 
 class Unit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -61,4 +88,3 @@ class UserLessonProgress(models.Model):
         on_delete=models.CASCADE,
         related_name="learning_lesson_progress",
     )
-
