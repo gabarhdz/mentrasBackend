@@ -1,8 +1,9 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from globals.cloudinary import CloudinaryImageField, upload_profile_pic
 
-from .models import Category, Pyme
+from .models import Category, Pyme, PymeEmployee
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -77,3 +78,17 @@ class PymeSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+class PymeEmployeeSerializer(serializers.ModelSerializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        source="user",
+        queryset=get_user_model().objects.all(),
+        write_only=True,
+    )
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+
+    class Meta:
+        model = PymeEmployee
+        fields = ["id", "user_id", "username", "email", "role", "created_at"]
+        read_only_fields = ["id", "username", "email", "created_at"]

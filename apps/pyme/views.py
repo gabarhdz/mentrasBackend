@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
 
-from .models import Category, Pyme
-from .serializers import CategorySerializer, PymeSerializer
+from .models import Category, Pyme, PymeEmployee
+from .serializers import CategorySerializer, PymeEmployeeSerializer, PymeSerializer
 
 
 class AccountPymes(APIView):
@@ -105,3 +105,56 @@ class PymeDetail(APIView):
 
         pyme.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PymeEmployees(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get_pyme(self, request, pyme_id):
+        try:
+            pyme = Pyme.objects.get(id=pyme_id)
+        except Pyme.DoesNotExist:
+            return None, Response(
+                {"error": "Pyme not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if pyme.owner != request.user:
+            return None, Response(
+                {"error": "You do not have permission to manage this pyme."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return pyme, None
+
+    def get(self, request, pyme_id, *args, **kwargs):
+        pyme, error_response = self.get_pyme(request, pyme_id)
+        if error_response:
+            return error_response
+
+        employees = PymeEmployee.objects.filter(pyme=pyme).select_related("user")
+        serializer = PymeEmployeeSerializer(employees, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, pyme_id, *args, **kwargs):
+        pyme, error_response = self.get_pyme(request, pyme_id)
+        if error_response:
+            return error_response
+
+        serializer = PymeEmployeeSerializer(data=request.data)
+        if serializer.is_valid():
+            if PymeEmployee.objects.filter(
+                pyme=pyme,
+                user=serializer.validated_data["user"],
+            ).exists():
+                return Response(
+                    {"error": "This user is already an employee of the pyme."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            employee = serializer.save(pyme=pyme)
+            return Response(
+                PymeEmployeeSerializer(employee).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
