@@ -42,6 +42,15 @@ class MyPymes(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class MemberPymes(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request, *args, **kwargs):
+        pymes = Pyme.objects.filter(employees__user=request.user).distinct().order_by("-access_date")
+        serializer = PymeSerializer(pymes, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class CategoryList(APIView):
     permission_classes = [IsEmailVerified]
 
