@@ -11,6 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     is_pyme_owner = serializers.BooleanField(default=False)
     is_admin = serializers.BooleanField(default=False)
     is_mentor = serializers.BooleanField(default=False)
+    is_superuser = serializers.BooleanField(read_only=True)
     phone_number = serializers.IntegerField(required=True)
     profile_pic = CloudinaryImageField(required=False, allow_null=True)
 
@@ -25,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
             'profile_pic',
             'is_mod',
             'is_admin',
+            'is_superuser',
             'is_mentor',
             'is_pyme_owner'
         ]

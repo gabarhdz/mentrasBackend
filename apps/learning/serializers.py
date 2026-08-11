@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.user.models import User
+
 from .models import Course, Lesson, MentorApplication, Unit
 
 
@@ -38,3 +40,25 @@ class MentorApplicationSerializer(serializers.ModelSerializer):
         model = MentorApplication
         fields = ["id", "applicant", "expertise", "experience", "motivation", "status", "created_at"]
         read_only_fields = ["id", "applicant", "status", "created_at"]
+
+
+class MentorApplicationAdminSerializer(MentorApplicationSerializer):
+    applicant_username = serializers.CharField(source="applicant.username", read_only=True)
+    applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
+
+    class Meta(MentorApplicationSerializer.Meta):
+        fields = MentorApplicationSerializer.Meta.fields + ["applicant_username", "applicant_email"]
+
+
+class MentorUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "is_mentor",
+            "is_pyme_owner",
+            "is_admin",
+            "is_superuser",
+        ]
