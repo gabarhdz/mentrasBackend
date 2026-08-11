@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from globals.permissions import IsEmailVerified
+from apps.notifications.services import create_notification
 
 from .models import Category, Pyme, PymeEmployee
 from .serializers import CategorySerializer, PymeEmployeeSerializer, PymeSerializer
@@ -161,6 +162,12 @@ class PymeEmployees(APIView):
                 )
 
             employee = serializer.save(pyme=pyme)
+            create_notification(
+                employee.user,
+                "Te añadieron a una pyme",
+                f"Ahora formas parte de {pyme.name} con el rol {employee.get_role_display()}.",
+                "pyme_employee",
+            )
             return Response(
                 PymeEmployeeSerializer(employee).data,
                 status=status.HTTP_201_CREATED,
