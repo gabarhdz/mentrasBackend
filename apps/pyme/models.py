@@ -43,6 +43,37 @@ class Pyme(models.Model):
     foundation_date = models.DateField()
     def __str__(self):
         return self.name 
+
+class PymeEmployee(models.Model):
+    class Role(models.TextChoices):
+        MANAGER = "manager", "Manager"
+        EMPLOYEE = "employee", "Employee"
+        INVENTORY = "inventory", "Inventory"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    pyme = models.ForeignKey(
+        Pyme,
+        on_delete=models.CASCADE,
+        related_name="employees",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="pyme_employments",
+    )
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.EMPLOYEE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pyme", "user"],
+                name="unique_user_per_pyme",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.pyme} ({self.role})"
     
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
