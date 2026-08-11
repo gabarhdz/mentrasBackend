@@ -2,7 +2,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import F
+from django.db.models import F, Q
 from apps.stock.models import Item, Menu, MenuMovement, MenuItem
 from apps.stock.serializers import ItemSerializer, MenuSerializer, MenuItemSerializer, MenuMovementSerializer
 
@@ -21,6 +21,17 @@ class AllItems(APIView):
             item = serializer.save()
             return Response(ItemSerializer(item, context={"request": request}).data, status=201)
         return Response(serializer.errors, status=400)
+
+
+class MyItems(APIView):
+    permission_classes = [IsEmailVerified]
+
+    def get(self, request):
+        items = Item.objects.filter(
+            Q(created_by=request.user) | Q(menu_items__menu__pyme__owner=request.user)
+        ).distinct()
+        serializer = ItemSerializer(items, many=True)
+        return Response(serializer.data)
     
 class SpecItem(APIView):
     permission_classes = [IsEmailVerified]
