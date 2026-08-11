@@ -65,6 +65,7 @@ class UserSerializer(serializers.ModelSerializer):
             instance.profile_pic = upload_profile_pic(
                 profile_pic_file,
                 public_id=str(instance.id),
+                folder="profile_pics",
                 overwrite=True,
             )
 
